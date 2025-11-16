@@ -74,85 +74,77 @@ describe('Tool Handlers', () => {
   // --- Reminder Handlers ---
 
   describe('handleReadReminders', () => {
-    it('should return reminders formatted as Markdown', async () => {
+    it('formats reminder collections with completion states and metadata', async () => {
       const mockReminders = [
         {
           id: '1',
-          title: 'Test',
+          title: 'Basic Reminder',
           isCompleted: false,
-          list: 'Inbox',
+          list: 'Personal',
+          notes: 'Line 1\nLine 2',
+          dueDate: '2024-01-15T10:00:00Z',
+          url: 'https://example.com',
+        },
+        {
+          id: '2',
+          title: 'Full Reminder',
+          isCompleted: true,
+          list: 'Work',
+          notes: 'Important note',
+          dueDate: null,
+          url: null,
         },
       ];
       mockReminderRepository.findReminders.mockResolvedValue(mockReminders);
+
       const result = await handleReadReminders({ action: 'read' });
       const content = _getTextContent(result.content);
-      expect(content).toContain('### Reminders (Total: 1)');
-      expect(content).toContain('- [ ] Test');
-    });
 
-    it('should return single reminder when id is provided', async () => {
-      const mockReminder = {
-        id: '123',
-        title: 'Single Reminder',
-        isCompleted: false,
-        list: 'Work',
-        notes: 'Some notes',
-        dueDate: '2024-12-25',
-        url: 'https://example.com',
-      };
-      mockReminderRepository.findReminderById.mockResolvedValue(mockReminder);
-      const result = await handleReadReminders({
-        action: 'read',
-        id: '123',
-      });
-      const content = _getTextContent(result.content);
-      expect(content).toContain('### Reminder');
-      expect(content).toContain('- [ ] Single Reminder');
+      expect(content).toContain('### Reminders (Total: 2)');
+      expect(content).toContain('- [ ] Basic Reminder');
+      expect(content).toContain('- [x] Full Reminder');
+      expect(content).toContain('- List: Personal');
       expect(content).toContain('- List: Work');
-      expect(content).toContain('- ID: 123');
-      expect(content).toContain('- Notes: Some notes');
-      expect(content).toContain('- Due: 2024-12-25');
+      expect(content).toContain('- Due: 2024-01-15T10:00:00Z');
       expect(content).toContain('- URL: https://example.com');
+      expect(content).toContain('Notes: Line 1\n    Line 2');
     });
 
-    it('should return single completed reminder with checkbox', async () => {
+    it('renders single reminder details including metadata and completion state', async () => {
       const mockReminder = {
         id: '456',
         title: 'Completed Task',
         isCompleted: true,
         list: 'Done',
+        notes: 'Some notes',
+        dueDate: '2024-12-25',
+        url: 'https://example.com',
       };
       mockReminderRepository.findReminderById.mockResolvedValue(mockReminder);
+
       const result = await handleReadReminders({
         action: 'read',
         id: '456',
       });
       const content = _getTextContent(result.content);
+
+      expect(content).toContain('### Reminder');
       expect(content).toContain('- [x] Completed Task');
+      expect(content).toContain('- List: Done');
+      expect(content).toContain('- ID: 456');
+      expect(content).toContain('- Notes: Some notes');
+      expect(content).toContain('- Due: 2024-12-25');
+      expect(content).toContain('- URL: https://example.com');
     });
 
-    it('should return empty list message when no reminders found', async () => {
+    it('returns empty state messaging when no reminders match', async () => {
       mockReminderRepository.findReminders.mockResolvedValue([]);
+
       const result = await handleReadReminders({ action: 'read' });
       const content = _getTextContent(result.content);
+
       expect(content).toContain('### Reminders (Total: 0)');
       expect(content).toContain('No reminders found matching the criteria.');
-    });
-
-    it('should format reminders with notes containing newlines', async () => {
-      const mockReminders = [
-        {
-          id: '1',
-          title: 'Task',
-          isCompleted: false,
-          list: 'Work',
-          notes: 'Line 1\nLine 2\nLine 3',
-        },
-      ];
-      mockReminderRepository.findReminders.mockResolvedValue(mockReminders);
-      const result = await handleReadReminders({ action: 'read' });
-      const content = _getTextContent(result.content);
-      expect(content).toContain('Notes: Line 1\n    Line 2\n    Line 3');
     });
   });
 
@@ -339,77 +331,6 @@ describe('Tool Handlers', () => {
       const content = _getTextContent(result.content);
       expect(content).toBe('Successfully deleted event with ID "event-789".');
     });
-
-    it('should format reminders with various properties', async () => {
-      const mockReminders = [
-        {
-          id: '1',
-          title: 'Basic Reminder',
-          isCompleted: false,
-          list: 'Personal',
-          notes: null,
-          dueDate: null,
-          url: null,
-        },
-        {
-          id: '2',
-          title: 'Full Reminder',
-          isCompleted: true,
-          list: 'Work',
-          notes: 'Important note\nSecond line',
-          dueDate: '2024-01-15T10:00:00Z',
-          url: 'https://example.com',
-        },
-      ];
-
-      mockReminderRepository.findReminders.mockResolvedValue(mockReminders);
-      const result = await handleReadReminders({ action: 'read' });
-      const content = _getTextContent(result.content);
-
-      expect(content).toContain('Basic Reminder');
-      expect(content).toContain('[ ] Basic Reminder'); // incomplete
-      expect(content).toContain('[x] Full Reminder'); // completed
-      expect(content).toContain('- List: Personal');
-      expect(content).toContain('- List: Work');
-      expect(content).toContain('- ID: 1');
-      expect(content).toContain('- ID: 2');
-      expect(content).toContain('- Due: 2024-01-15T10:00:00Z');
-      expect(content).toContain('- URL: https://example.com');
-    });
-
-    it('should format calendar events with all property combinations', async () => {
-      const mockEvents = [
-        {
-          id: 'evt-1',
-          title: 'Minimal Event',
-        },
-        {
-          id: 'evt-2',
-          title: 'Full Event',
-          calendar: 'Work',
-          startDate: '2025-11-15T09:00:00Z',
-          endDate: '2025-11-15T10:00:00Z',
-          isAllDay: true,
-          location: 'Conference Room',
-          notes: 'Meeting notes',
-          url: 'https://zoom.us/meeting',
-        },
-      ];
-
-      mockCalendarRepository.findEvents.mockResolvedValue(mockEvents);
-      const result = await handleReadCalendarEvents({ action: 'read' });
-      const content = _getTextContent(result.content);
-
-      expect(content).toContain('Minimal Event');
-      expect(content).toContain('Full Event');
-      expect(content).toContain('- Calendar: Work');
-      expect(content).toContain('- Start: 2025-11-15T09:00:00Z');
-      expect(content).toContain('- End: 2025-11-15T10:00:00Z');
-      expect(content).toContain('- All Day: true');
-      expect(content).toContain('- Location: Conference Room');
-      expect(content).toContain('- Notes: Meeting notes');
-      expect(content).toContain('- URL: https://zoom.us/meeting');
-    });
   });
 
   describe('formatDeleteMessage', () => {
@@ -476,22 +397,39 @@ describe('Tool Handlers', () => {
   });
 
   describe('handleReadCalendarEvents', () => {
-    it('should return events formatted as Markdown', async () => {
+    it('formats event collections with optional metadata', async () => {
       const mockEvents = [
         {
-          id: 'event-1',
-          title: 'Meeting',
-          startDate: '2025-11-04T09:00:00+08:00',
-          endDate: '2025-11-04T10:00:00+08:00',
+          id: 'evt-1',
+          title: 'Minimal Event',
+        },
+        {
+          id: 'evt-2',
+          title: 'Full Event',
           calendar: 'Work',
-          isAllDay: false,
+          startDate: '2025-11-15T09:00:00Z',
+          endDate: '2025-11-15T10:00:00Z',
+          isAllDay: true,
+          location: 'Conference Room',
+          notes: 'Meeting notes',
+          url: 'https://zoom.us/meeting',
         },
       ];
       mockCalendarRepository.findEvents.mockResolvedValue(mockEvents);
+
       const result = await handleReadCalendarEvents({ action: 'read' });
       const content = _getTextContent(result.content);
-      expect(content).toContain('### Calendar Events (Total: 1)');
-      expect(content).toContain('- Meeting');
+
+      expect(content).toContain('### Calendar Events (Total: 2)');
+      expect(content).toContain('- Minimal Event');
+      expect(content).toContain('- Full Event');
+      expect(content).toContain('- Calendar: Work');
+      expect(content).toContain('- Start: 2025-11-15T09:00:00Z');
+      expect(content).toContain('- End: 2025-11-15T10:00:00Z');
+      expect(content).toContain('- All Day: true');
+      expect(content).toContain('- Location: Conference Room');
+      expect(content).toContain('- Notes: Meeting notes');
+      expect(content).toContain('- URL: https://zoom.us/meeting');
       expect(mockCalendarRepository.findAllCalendars).not.toHaveBeenCalled();
     });
 
