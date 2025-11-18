@@ -45,6 +45,69 @@ function normalizeToolName(name: string): string {
   return TOOL_ALIASES[name] ?? name;
 }
 
+type ToolArgs =
+  | RemindersToolArgs
+  | ListsToolArgs
+  | CalendarToolArgs
+  | CalendarsToolArgs;
+
+type ToolRouter = (args?: ToolArgs) => Promise<CallToolResult>;
+
+type ActionHandler<TArgs extends { action: string }> = (
+  args: TArgs,
+) => Promise<CallToolResult>;
+
+type RoutedToolName = 'reminders_tasks' | 'reminders_lists' | 'calendar_events';
+type ToolName = RoutedToolName | 'calendar_calendars';
+
+const createActionRouter = <TArgs extends { action: string }>(
+  toolName: RoutedToolName,
+  handlerMap: Record<TArgs['action'], ActionHandler<TArgs>>,
+): ToolRouter => {
+  return async (args?: ToolArgs) => {
+    if (!args) {
+      return createErrorResponse('No arguments provided');
+    }
+
+    const typedArgs = args as TArgs;
+    const handler = handlerMap[typedArgs.action];
+
+    if (!handler) {
+      return createErrorResponse(
+        MESSAGES.ERROR.UNKNOWN_ACTION(toolName, String(typedArgs.action)),
+      );
+    }
+
+    return handler(typedArgs);
+  };
+};
+
+const TOOL_ROUTER_MAP = {
+  reminders_tasks: createActionRouter<RemindersToolArgs>('reminders_tasks', {
+    read: (reminderArgs) => handleReadReminders(reminderArgs),
+    create: (reminderArgs) => handleCreateReminder(reminderArgs),
+    update: (reminderArgs) => handleUpdateReminder(reminderArgs),
+    delete: (reminderArgs) => handleDeleteReminder(reminderArgs),
+  }),
+  reminders_lists: createActionRouter<ListsToolArgs>('reminders_lists', {
+    read: async (_listArgs) => handleReadReminderLists(),
+    create: (listArgs) => handleCreateReminderList(listArgs),
+    update: (listArgs) => handleUpdateReminderList(listArgs),
+    delete: (listArgs) => handleDeleteReminderList(listArgs),
+  }),
+  calendar_events: createActionRouter<CalendarToolArgs>('calendar_events', {
+    read: (calendarArgs) => handleReadCalendarEvents(calendarArgs),
+    create: (calendarArgs) => handleCreateCalendarEvent(calendarArgs),
+    update: (calendarArgs) => handleUpdateCalendarEvent(calendarArgs),
+    delete: (calendarArgs) => handleDeleteCalendarEvent(calendarArgs),
+  }),
+  calendar_calendars: async (args?: ToolArgs) =>
+    handleReadCalendars(args as CalendarsToolArgs | undefined),
+} satisfies Record<ToolName, ToolRouter>;
+
+const isManagedToolName = (value: string): value is ToolName =>
+  value in TOOL_ROUTER_MAP;
+
 /**
  * Creates an error response with the given message
  */
@@ -57,87 +120,16 @@ function createErrorResponse(message: string): CallToolResult {
 
 export async function handleToolCall(
   name: string,
-  args?:
-    | RemindersToolArgs
-    | ListsToolArgs
-    | CalendarToolArgs
-    | CalendarsToolArgs,
+  args?: ToolArgs,
 ): Promise<CallToolResult> {
   const normalizedName = normalizeToolName(name);
 
-  switch (normalizedName) {
-    case 'reminders_tasks': {
-      const action = args?.action;
-      if (!args) {
-        return createErrorResponse('No arguments provided');
-      }
-      switch (action) {
-        case 'read':
-          return handleReadReminders(args);
-        case 'create':
-          return handleCreateReminder(args);
-        case 'update':
-          return handleUpdateReminder(args);
-        case 'delete':
-          return handleDeleteReminder(args);
-        default:
-          return createErrorResponse(
-            MESSAGES.ERROR.UNKNOWN_ACTION('reminders_tasks', String(action)),
-          );
-      }
-    }
-    case 'reminders_lists': {
-      if (!args) {
-        return createErrorResponse('No arguments provided');
-      }
-      const action = args.action;
-      // Type narrowing: at this point args must be ListsToolArgs
-      const listsArgs = args as ListsToolArgs;
-      switch (action) {
-        case 'read':
-          return handleReadReminderLists();
-        case 'create':
-          return handleCreateReminderList(listsArgs);
-        case 'update':
-          return handleUpdateReminderList(listsArgs);
-        case 'delete':
-          return handleDeleteReminderList(listsArgs);
-        default:
-          return createErrorResponse(
-            MESSAGES.ERROR.UNKNOWN_ACTION('reminders_lists', String(action)),
-          );
-      }
-    }
-    case 'calendar_events': {
-      if (!args) {
-        return createErrorResponse('No arguments provided');
-      }
-      const action = args.action;
-      // Type narrowing: at this point args must be CalendarToolArgs
-      const calendarArgs = args as CalendarToolArgs;
-      switch (action) {
-        case 'read':
-          return handleReadCalendarEvents(calendarArgs);
-        case 'create':
-          return handleCreateCalendarEvent(calendarArgs);
-        case 'update':
-          return handleUpdateCalendarEvent(calendarArgs);
-        case 'delete':
-          return handleDeleteCalendarEvent(calendarArgs);
-        default:
-          return createErrorResponse(
-            MESSAGES.ERROR.UNKNOWN_ACTION('calendar_events', String(action)),
-          );
-      }
-    }
-    case 'calendar_calendars': {
-      // Type narrowing: at this point args must be CalendarsToolArgs or undefined
-      const calendarsArgs = args as CalendarsToolArgs | undefined;
-      return handleReadCalendars(calendarsArgs);
-    }
-    default:
-      return createErrorResponse(MESSAGES.ERROR.UNKNOWN_TOOL(name));
+  if (!isManagedToolName(normalizedName)) {
+    return createErrorResponse(MESSAGES.ERROR.UNKNOWN_TOOL(name));
   }
+
+  const router = TOOL_ROUTER_MAP[normalizedName];
+  return router(args);
 }
 
 export { TOOLS };
