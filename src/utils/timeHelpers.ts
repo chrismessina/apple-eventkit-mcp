@@ -3,6 +3,7 @@
  * Time formatting and context utilities for prompt templates
  */
 
+import { TIME } from './constants.js';
 import { getDateStart, getTodayStart, getTomorrowStart } from './dateUtils.js';
 
 /**
@@ -50,15 +51,16 @@ export function getTimeContext(): TimeContext {
 
   // Working hours check (9am-6pm)
   const hour = now.getHours();
-  const isWorkingHours = hour >= 9 && hour < 18;
+  const isWorkingHours =
+    hour >= TIME.WORKING_HOURS_START && hour < TIME.WORKING_HOURS_END;
 
   // Time of day categorization
   let timeOfDay: TimeContext['timeOfDay'];
-  if (hour >= 5 && hour < 12) {
+  if (hour >= TIME.MORNING_START && hour < TIME.NOON) {
     timeOfDay = 'morning';
-  } else if (hour >= 12 && hour < 17) {
+  } else if (hour >= TIME.NOON && hour < TIME.AFTERNOON_END) {
     timeOfDay = 'afternoon';
-  } else if (hour >= 17 && hour < 21) {
+  } else if (hour >= TIME.EVENING_START && hour < TIME.NIGHT_START) {
     timeOfDay = 'evening';
   } else {
     timeOfDay = 'night';
@@ -172,24 +174,33 @@ export function getFuzzyTimeSuggestions(): {
 
   // Later today
   const laterToday = new Date(now);
-  laterToday.setHours(Math.min(hour + 4, 17), 0, 0, 0);
+  laterToday.setHours(
+    Math.min(hour + TIME.LATER_TODAY_HOURS, TIME.END_OF_WEEK_HOUR),
+    0,
+    0,
+    0,
+  );
 
   // Tomorrow morning
   const tomorrow = getTomorrowStart();
-  tomorrow.setHours(9, 0, 0, 0);
+  tomorrow.setHours(TIME.DEFAULT_MORNING_HOUR, 0, 0, 0);
 
   // End of week (Friday 5pm)
   const endOfWeek = new Date(now);
   const currentDay = now.getDay(); // 0 = Sunday, 6 = Saturday
   const daysUntilFriday =
-    currentDay === 0 ? 5 : currentDay <= 5 ? 5 - currentDay : 12 - currentDay;
+    currentDay === TIME.SUNDAY
+      ? TIME.FRIDAY
+      : currentDay <= TIME.FRIDAY
+        ? TIME.FRIDAY - currentDay
+        : 12 - currentDay;
   endOfWeek.setDate(now.getDate() + daysUntilFriday);
-  endOfWeek.setHours(17, 0, 0, 0);
+  endOfWeek.setHours(TIME.END_OF_WEEK_HOUR, 0, 0, 0);
 
   // Next week
   const nextWeek = new Date(now);
   nextWeek.setDate(now.getDate() + 7);
-  nextWeek.setHours(9, 0, 0, 0);
+  nextWeek.setHours(TIME.DEFAULT_MORNING_HOUR, 0, 0, 0);
 
   return {
     laterToday: formatRelativeTime(laterToday),

@@ -31,6 +31,54 @@ export const VALIDATION = {
 } as const;
 
 /**
+ * Tool names for MCP server operations
+ */
+export const TOOLS = {
+  /** Reminder tasks management tool */
+  REMINDERS_TASKS: 'reminders_tasks',
+  /** Reminder lists management tool */
+  REMINDERS_LISTS: 'reminders_lists',
+  /** Calendar events management tool */
+  CALENDAR_EVENTS: 'calendar_events',
+  /** Calendar collections management tool */
+  CALENDAR_CALENDARS: 'calendar_calendars',
+
+  /** Aliases for dot notation support */
+  ALIASES: {
+    'reminders.tasks': 'reminders_tasks',
+    'reminders.lists': 'reminders_lists',
+    'calendar.events': 'calendar_events',
+    'calendar.calendars': 'calendar_calendars',
+  } as const,
+} as const;
+
+/**
+ * Time and date constants for consistent time-based logic
+ */
+export const TIME = {
+  /** Working hours boundaries */
+  WORKING_HOURS_START: 9,
+  WORKING_HOURS_END: 18,
+
+  /** Time of day boundaries for categorization */
+  MORNING_START: 5,
+  NOON: 12,
+  AFTERNOON_END: 17,
+  EVENING_START: 17,
+  NIGHT_START: 21,
+
+  /** Default time suggestions */
+  LATER_TODAY_HOURS: 4,
+  END_OF_WEEK_HOUR: 17,
+  DEFAULT_MORNING_HOUR: 9,
+
+  /** Day of week constants (0 = Sunday, 6 = Saturday) */
+  SUNDAY: 0,
+  FRIDAY: 5,
+  SATURDAY: 6,
+} as const;
+
+/**
  * Error message templates
  */
 export const MESSAGES = {
