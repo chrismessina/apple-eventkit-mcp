@@ -56,6 +56,9 @@ const bufferToString = (data?: string | Buffer | null): string | null => {
   return data == null ? null : String(data);
 };
 
+/**
+ * Parses JSON output from CLI
+ */
 const parseCliOutput = <T>(output: string): T => {
   let parsed: CliResponse<T>;
   try {

@@ -64,6 +64,9 @@ type ActionHandler<TArgs extends { action: string }> = (
 type RoutedToolName = 'reminders_tasks' | 'reminders_lists' | 'calendar_events';
 type ToolName = RoutedToolName | 'calendar_calendars';
 
+/**
+ * Creates an action router for tools with multiple actions
+ */
 const createActionRouter = <TArgs extends { action: string }>(
   toolName: RoutedToolName,
   handlerMap: Record<TArgs['action'], ActionHandler<TArgs>>,
