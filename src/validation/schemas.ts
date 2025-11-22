@@ -115,11 +115,7 @@ function parseDateRespectingSystemTimezone(dateString: string): Date | null {
   }
 
   const parsedDate = new Date(dateString);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return null;
-  }
-
-  return parsedDate;
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
 }
 
 function isTodayDateString(dateString: string): boolean {
