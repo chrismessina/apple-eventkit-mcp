@@ -1,127 +1,102 @@
 /**
  * reminderLinks.test.ts
- * Tests for reminder references and related reminder formatting
+ * Tests for reminder link utilities
  */
 
 import {
-  extractReminderIdsFromNotes,
+  extractLinks,
+  formatLinks,
   formatRelatedReminders,
+  hasLink,
   type RelatedReminder,
 } from './reminderLinks.js';
 
-describe('reminderLinks', () => {
-  describe('formatRelatedReminders', () => {
-    it('should format related reminders by relationship type', () => {
-      const related: RelatedReminder[] = [
-        {
-          id: 'dep1',
-          title: 'Dependency 1',
-          list: 'Work',
-          relationship: 'dependency',
-        },
-        {
-          id: 'dep2',
-          title: 'Dependency 2',
-          list: 'Personal',
-          relationship: 'dependency',
-        },
-        { id: 'follow1', title: 'Follow-up Task', relationship: 'follow-up' },
-      ];
-
-      const result = formatRelatedReminders(related);
-
-      expect(result).toContain('Dependencies:');
-      expect(result).toContain('- [Dependency 1] (ID: dep1) (Work)');
-      expect(result).toContain('- [Dependency 2] (ID: dep2) (Personal)');
-      expect(result).toContain('Follow-up tasks:');
-      expect(result).toContain('- [Follow-up Task] (ID: follow1)');
-    });
-
-    it('should handle reminders without lists', () => {
-      const related: RelatedReminder[] = [
-        { id: 'task1', title: 'Task 1', relationship: 'related' },
-      ];
-
-      const result = formatRelatedReminders(related);
-
-      expect(result).toContain('Related reminders:');
-      expect(result).toContain('- [Task 1] (ID: task1)');
-    });
-
-    it('should handle blocked-by relationship', () => {
-      const related: RelatedReminder[] = [
-        { id: 'blocker1', title: 'Blocking Task', relationship: 'blocked-by' },
-      ];
-
-      const result = formatRelatedReminders(related);
-
-      expect(result).toContain('Blocked by:');
-      expect(result).toContain('- [Blocking Task] (ID: blocker1)');
-    });
-
-    it('should handle prerequisite relationship', () => {
-      const related: RelatedReminder[] = [
-        {
-          id: 'prereq1',
-          title: 'Required Task',
-          relationship: 'prerequisite',
-        },
-      ];
-
-      const result = formatRelatedReminders(related);
-
-      expect(result).toContain('Prerequisites:');
-      expect(result).toContain('- [Required Task] (ID: prereq1)');
-    });
-
-    it('should handle unknown relationship type', () => {
-      const related: RelatedReminder[] = [
-        {
-          id: 'unknown1',
-          title: 'Unknown Type',
-          relationship: 'custom',
-        } as unknown as RelatedReminder,
-      ];
-
-      const result = formatRelatedReminders(related);
-
-      expect(result).toContain('Related:');
-      expect(result).toContain('- [Unknown Type] (ID: unknown1)');
-    });
-
-    it('should return empty string for no related reminders', () => {
-      const result = formatRelatedReminders([]);
-      expect(result).toBe('');
-    });
+describe('extractLinks', () => {
+  it('should extract single link', () => {
+    const notes = 'Related:\nABC123';
+    expect(extractLinks(notes)).toEqual(['ABC123']);
   });
 
-  describe('extractReminderIdsFromNotes', () => {
-    it('should extract reminder IDs from reference format', () => {
-      const notes =
-        'Task notes\n\nRelated reminders:\n- [Task 1] (ID: task1)\n- [Task 2] (ID: task-2-with-dash)';
+  it('should extract multiple links', () => {
+    const notes = 'Related:\nABC, DEF, GHI';
+    expect(extractLinks(notes)).toEqual(['ABC', 'DEF', 'GHI']);
+  });
 
-      const ids = extractReminderIdsFromNotes(notes);
-      expect(ids).toContain('task1');
-      expect(ids).toContain('task-2-with-dash');
-    });
+  it('should extract links from multiline notes', () => {
+    const notes = 'Some content\n\nRelated:\nABC, DEF';
+    expect(extractLinks(notes)).toEqual(['ABC', 'DEF']);
+  });
 
-    it('should handle IDs with spaces', () => {
-      const notes = 'Related: [Task] (ID: task with spaces)';
+  it('should return empty array for no links', () => {
+    expect(extractLinks('Just content')).toEqual([]);
+  });
 
-      const ids = extractReminderIdsFromNotes(notes);
-      expect(ids).toContain('task with spaces');
-    });
+  it('should return empty array for undefined', () => {
+    expect(extractLinks(undefined)).toEqual([]);
+  });
 
-    it('should return empty array for notes without references', () => {
-      const notes = 'Just regular notes without any references';
+  it('should return empty array for empty string', () => {
+    expect(extractLinks('')).toEqual([]);
+  });
 
-      const ids = extractReminderIdsFromNotes(notes);
-      expect(ids).toEqual([]);
-    });
+  it('should handle whitespace in IDs', () => {
+    const notes = 'Related:\nABC , DEF ';
+    expect(extractLinks(notes)).toEqual(['ABC', 'DEF']);
+  });
 
-    it('should handle empty or undefined notes', () => {
-      expect(extractReminderIdsFromNotes('')).toEqual([]);
-      expect(extractReminderIdsFromNotes(undefined)).toEqual([]);
-    });
+  it('should handle Related at start of notes', () => {
+    const notes = 'Related:\nABC\n\nSome other content';
+    expect(extractLinks(notes)).toEqual(['ABC']);
+  });
+});
+
+describe('formatLinks', () => {
+  it('should format single link', () => {
+    expect(formatLinks(['ABC'])).toBe('Related:\nABC');
+  });
+
+  it('should format multiple links', () => {
+    expect(formatLinks(['ABC', 'DEF', 'GHI'])).toBe('Related:\nABC, DEF, GHI');
+  });
+
+  it('should return empty string for empty array', () => {
+    expect(formatLinks([])).toBe('');
+  });
+});
+
+describe('hasLink', () => {
+  it('should return true if link exists', () => {
+    const notes = 'Related:\nABC, DEF';
+    expect(hasLink(notes, 'ABC')).toBe(true);
+    expect(hasLink(notes, 'DEF')).toBe(true);
+  });
+
+  it('should return false if link does not exist', () => {
+    const notes = 'Related:\nABC, DEF';
+    expect(hasLink(notes, 'GHI')).toBe(false);
+  });
+
+  it('should return false for undefined notes', () => {
+    expect(hasLink(undefined, 'ABC')).toBe(false);
+  });
+
+  it('should return false for notes without links', () => {
+    expect(hasLink('Just content', 'ABC')).toBe(false);
+  });
+});
+
+describe('formatRelatedReminders (legacy)', () => {
+  it('should format related reminders as Related line', () => {
+    const related: RelatedReminder[] = [
+      { id: 'ABC', title: 'Task 1', relationship: 'dependency' },
+      { id: 'DEF', title: 'Task 2', relationship: 'follow-up' },
+    ];
+
+    const result = formatRelatedReminders(related);
+    expect(result).toBe('\n\nRelated:\nABC, DEF');
+  });
+
+  it('should return empty string for empty array', () => {
+    expect(formatRelatedReminders([])).toBe('');
   });
 });
