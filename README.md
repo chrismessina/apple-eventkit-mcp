@@ -2,11 +2,9 @@
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/FradSer?style=social)](https://twitter.com/FradSer)
 
-English | Simplified Chinese (see README.zh-CN.md)
+English | [简体中文](README.zh-CN.md)
 
-A Model Context Protocol (MCP) server that provides native integration with Apple Reminders and Calendar on macOS. This server allows you to interact with Apple Reminders and Calendar Events through a standardized interface with comprehensive management capabilities.
-
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/fradser-mcp-server-apple-events-badge.png)](https://mseep.ai/app/fradser-mcp-server-apple-events)
+A Model Context Protocol (MCP) server that uses EventKit to operate Apple Calendar and Apple Reminders on macOS.
 
 ## Features
 
@@ -14,7 +12,7 @@ A Model Context Protocol (MCP) server that provides native integration with Appl
 - **List Management**: View all reminders and reminder lists with advanced filtering options
 - **Reminder Operations**: Full CRUD operations (Create, Read, Update, Delete) for reminders across lists
 - **Rich Content Support**: Complete support for titles, notes, due dates, URLs, and completion status
-- **Native macOS Integration**: Direct integration with Apple Reminders using EventKit framework
+- **Native macOS Integration**: Uses EventKit to operate Apple Calendar and Apple Reminders
 
 ### Advanced Features
 - **Smart Organization**: Automatic categorization and intelligent filtering by priority, due date, category, or completion status
@@ -27,7 +25,7 @@ A Model Context Protocol (MCP) server that provides native integration with Appl
 ### Technical Excellence
 - **Clean Architecture**: 4-layer architecture following Clean Architecture principles with dependency injection
 - **Type Safety**: Complete TypeScript coverage with Zod schema validation for runtime type checking
-- **High Performance**: Swift-compiled binaries for performance-critical Apple Reminders operations
+- **High Performance**: Swift-compiled binaries for performance-critical Apple Reminders and Calendar operations
 - **Robust Error Handling**: Consistent error responses with detailed diagnostic information
 - **Repository Pattern**: Data access abstraction with standardized CRUD operations
 - **Functional Programming**: Pure functions with immutable data structures where appropriate
