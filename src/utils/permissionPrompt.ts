@@ -10,9 +10,11 @@ const execFileAsync = promisify(execFile);
 
 export type PermissionDomain = 'reminders' | 'calendars';
 
+const TIMEOUT_SECONDS = 120;
+
 const APPLESCRIPT_SNIPPETS: Record<PermissionDomain, string> = {
-  reminders: 'tell application "Reminders" to get the name of every list',
-  calendars: 'tell application "Calendar" to get the name of every calendar',
+  reminders: `with timeout of ${TIMEOUT_SECONDS} seconds\ntell application "Reminders" to get the name of every list\nend timeout`,
+  calendars: `with timeout of ${TIMEOUT_SECONDS} seconds\ntell application "Calendar" to get the name of every calendar\nend timeout`,
 };
 
 const promptPromises = new Map<PermissionDomain, Promise<void>>();
@@ -29,18 +31,6 @@ export async function triggerPermissionPrompt(
     if (existing) {
       return existing;
     }
-
-    const promise = (async () => {
-      const script = APPLESCRIPT_SNIPPETS[domain];
-      try {
-        await execFileAsync('osascript', ['-e', script]);
-      } catch {
-        // Ignore errors - the goal is to trigger the prompt
-      }
-    })();
-
-    promptPromises.set(domain, promise);
-    return promise;
   }
 
   const promise = (async () => {
@@ -51,6 +41,10 @@ export async function triggerPermissionPrompt(
       // Ignore errors - the goal is to trigger the prompt
     }
   })();
+
+  if (!force) {
+    promptPromises.set(domain, promise);
+  }
 
   return promise;
 }

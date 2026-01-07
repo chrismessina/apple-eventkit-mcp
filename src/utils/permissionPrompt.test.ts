@@ -45,7 +45,10 @@ describe('permissionPrompt', () => {
 
       expect(mockExecFile).toHaveBeenCalledWith(
         'osascript',
-        ['-e', 'tell application "Reminders" to get the name of every list'],
+        [
+          '-e',
+          'with timeout of 120 seconds\ntell application "Reminders" to get the name of every list\nend timeout',
+        ],
         expect.any(Function),
       );
     });
@@ -64,7 +67,10 @@ describe('permissionPrompt', () => {
 
       expect(mockExecFile).toHaveBeenCalledWith(
         'osascript',
-        ['-e', 'tell application "Calendar" to get the name of every calendar'],
+        [
+          '-e',
+          'with timeout of 120 seconds\ntell application "Calendar" to get the name of every calendar\nend timeout',
+        ],
         expect.any(Function),
       );
     });
