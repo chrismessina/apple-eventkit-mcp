@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-01-07
+
+### Added
+
+- Reminder link utilities for note management
+- Explicit timezone offset to `buildTimeFormat` prompt helper
+- `reminderDateParser` for safe timezone-aware date parsing
+
+### Fixed
+
+- Timeout management for permission prompt AppleScripts
+- Permission prompt race conditions and reliability issues
+- Proactive AppleScript trigger for permission prompts
+- Quotation marks in daily task prompt date format
+- Timezone setting when creating/updating events
+- Type narrowing for calendar calendars router
+- TypeScript compilation and linting errors in tests and binary validator
+
 ## [1.2.0] - 2025-11-15
 
 ### Added
@@ -389,7 +407,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic Apple Reminders integration
 - Foundation for macOS native reminder management
 
-[unreleased]: https://github.com/FradSer/mcp-server-apple-events/compare/v1.2.0...HEAD
+[unreleased]: https://github.com/FradSer/mcp-server-apple-events/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/FradSer/mcp-server-apple-events/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/FradSer/mcp-server-apple-events/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/FradSer/mcp-server-apple-events/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/FradSer/mcp-server-apple-events/compare/v1.0.0...v1.0.1
