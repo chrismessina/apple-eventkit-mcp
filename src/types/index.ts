@@ -20,6 +20,24 @@ export const PRIORITY_LABELS: Record<number, string> = {
 };
 
 /**
+ * Recurrence frequency types
+ */
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+/**
+ * Recurrence rule interface for repeating reminders
+ */
+export interface RecurrenceRule {
+  frequency: RecurrenceFrequency;
+  interval: number; // e.g., every 2 weeks
+  endDate?: string;
+  occurrenceCount?: number; // e.g., repeat 10 times
+  daysOfWeek?: number[]; // 1 = Sunday, 7 = Saturday
+  daysOfMonth?: number[]; // 1-31
+  monthsOfYear?: number[]; // 1-12
+}
+
+/**
  * Reminder item interface
  */
 export interface Reminder {
@@ -32,6 +50,7 @@ export interface Reminder {
   isCompleted: boolean;
   priority: number; // 0=none, 1=high, 5=medium, 9=low
   isFlagged: boolean;
+  recurrence?: RecurrenceRule;
 }
 
 /**
@@ -140,6 +159,7 @@ export interface RemindersToolArgs extends BaseToolArgs {
   dueWithin?: DueWithinOption;
   filterPriority?: 'high' | 'medium' | 'low' | 'none';
   filterFlagged?: boolean;
+  filterRecurring?: boolean;
   // Single item parameters
   title?: string;
   newTitle?: string;
@@ -149,6 +169,9 @@ export interface RemindersToolArgs extends BaseToolArgs {
   completed?: boolean;
   priority?: number; // 0=none, 1=high, 5=medium, 9=low
   flagged?: boolean;
+  // Recurrence parameters
+  recurrence?: RecurrenceRule;
+  clearRecurrence?: boolean;
   // Target list for create/update operations
   targetList?: string;
 }

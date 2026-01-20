@@ -4,6 +4,19 @@
  */
 
 /**
+ * Recurrence rule JSON interface matching EventKitCLI output
+ */
+export interface RecurrenceRuleJSON {
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  interval: number;
+  endDate?: string | null;
+  occurrenceCount?: number | null;
+  daysOfWeek?: number[] | null; // 1 = Sunday, 7 = Saturday
+  daysOfMonth?: number[] | null; // 1-31
+  monthsOfYear?: number[] | null; // 1-12
+}
+
+/**
  * JSON interfaces matching the output from EventKitCLI
  */
 
@@ -17,6 +30,7 @@ export interface ReminderJSON {
   dueDate: string | null;
   priority: number;
   isFlagged: boolean;
+  recurrence: RecurrenceRuleJSON | null;
 }
 
 export interface ListJSON {
@@ -67,6 +81,7 @@ export interface CreateReminderData {
   dueDate?: string;
   priority?: number;
   isFlagged?: boolean;
+  recurrence?: RecurrenceRuleJSON;
 }
 
 export interface UpdateReminderData {
@@ -79,6 +94,8 @@ export interface UpdateReminderData {
   dueDate?: string;
   priority?: number;
   isFlagged?: boolean;
+  recurrence?: RecurrenceRuleJSON;
+  clearRecurrence?: boolean;
 }
 
 export interface CreateEventData {

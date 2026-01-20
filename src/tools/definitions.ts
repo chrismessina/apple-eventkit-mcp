@@ -121,6 +121,63 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
           type: 'boolean',
           description: 'Filter to only show flagged reminders when true.',
         },
+        filterRecurring: {
+          type: 'boolean',
+          description: 'Filter to only show recurring reminders when true.',
+        },
+        // Recurrence properties for create/update
+        recurrence: {
+          type: 'object',
+          description:
+            'Recurrence rule for repeating reminders. Set to create/update recurring reminders.',
+          properties: {
+            frequency: {
+              type: 'string',
+              enum: ['daily', 'weekly', 'monthly', 'yearly'],
+              description: 'How often the reminder repeats.',
+            },
+            interval: {
+              type: 'integer',
+              description:
+                'Interval between occurrences (e.g., 2 for every 2 weeks). Defaults to 1.',
+              default: 1,
+            },
+            endDate: {
+              type: 'string',
+              description:
+                'When the recurrence ends (YYYY-MM-DD format). Optional.',
+            },
+            occurrenceCount: {
+              type: 'integer',
+              description:
+                'Number of times to repeat (e.g., 10 for repeat 10 times). Optional.',
+            },
+            daysOfWeek: {
+              type: 'array',
+              items: { type: 'integer' },
+              description:
+                'Days of week for weekly recurrence (1=Sunday, 7=Saturday). Optional.',
+            },
+            daysOfMonth: {
+              type: 'array',
+              items: { type: 'integer' },
+              description:
+                'Days of month for monthly recurrence (1-31). Optional.',
+            },
+            monthsOfYear: {
+              type: 'array',
+              items: { type: 'integer' },
+              description:
+                'Months for yearly recurrence (1-12). Optional.',
+            },
+          },
+          required: ['frequency'],
+        },
+        clearRecurrence: {
+          type: 'boolean',
+          description:
+            'Set to true to remove recurrence from an existing reminder (for update).',
+        },
       },
       required: ['action'],
       dependentSchemas: {

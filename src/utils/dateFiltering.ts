@@ -103,6 +103,7 @@ export interface ReminderFilters {
   list?: string;
   priority?: PriorityFilter;
   flagged?: boolean;
+  recurring?: boolean;
 }
 
 /**
@@ -158,6 +159,13 @@ export function applyReminderFilters(
   if (filters.flagged !== undefined && filters.flagged) {
     filteredReminders = filteredReminders.filter(
       (reminder) => reminder.isFlagged === true,
+    );
+  }
+
+  // Filter by recurring status
+  if (filters.recurring !== undefined && filters.recurring) {
+    filteredReminders = filteredReminders.filter(
+      (reminder) => reminder.recurrence !== undefined,
     );
   }
 

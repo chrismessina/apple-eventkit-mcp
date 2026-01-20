@@ -35,6 +35,19 @@ class ReminderRepository {
       delete normalizedReminder.dueDate;
     }
 
+    // Map recurrence from JSON (convert nulls to undefined)
+    if (reminder.recurrence) {
+      normalizedReminder.recurrence = {
+        frequency: reminder.recurrence.frequency,
+        interval: reminder.recurrence.interval,
+        endDate: reminder.recurrence.endDate ?? undefined,
+        occurrenceCount: reminder.recurrence.occurrenceCount ?? undefined,
+        daysOfWeek: reminder.recurrence.daysOfWeek ?? undefined,
+        daysOfMonth: reminder.recurrence.daysOfMonth ?? undefined,
+        monthsOfYear: reminder.recurrence.monthsOfYear ?? undefined,
+      };
+    }
+
     return normalizedReminder;
   }
 
@@ -81,6 +94,9 @@ class ReminderRepository {
       args.push('--priority', String(data.priority));
     }
     addOptionalBooleanArg(args, '--isFlagged', data.isFlagged);
+    if (data.recurrence) {
+      args.push('--recurrence', JSON.stringify(data.recurrence));
+    }
 
     return executeCli<ReminderJSON>(args);
   }
@@ -97,6 +113,10 @@ class ReminderRepository {
       args.push('--priority', String(data.priority));
     }
     addOptionalBooleanArg(args, '--isFlagged', data.isFlagged);
+    if (data.recurrence) {
+      args.push('--recurrence', JSON.stringify(data.recurrence));
+    }
+    addOptionalBooleanArg(args, '--clearRecurrence', data.clearRecurrence);
 
     return executeCli<ReminderJSON>(args);
   }

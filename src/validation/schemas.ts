@@ -134,6 +134,36 @@ const PriorityValueSchema = z
   .optional();
 
 /**
+ * Recurrence rule schema for repeating reminders
+ */
+const RecurrenceRuleSchema = z
+  .object({
+    frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
+    interval: z.number().int().positive().default(1),
+    endDate: SafeDateSchema,
+    occurrenceCount: z.number().int().positive().optional(),
+    daysOfWeek: z
+      .array(z.number().int().min(1).max(7))
+      .optional()
+      .refine((arr: number[] | undefined) => !arr || arr.length <= 7, {
+        message: 'daysOfWeek cannot have more than 7 entries',
+      }),
+    daysOfMonth: z
+      .array(z.number().int().min(1).max(31))
+      .optional()
+      .refine((arr: number[] | undefined) => !arr || arr.length <= 31, {
+        message: 'daysOfMonth cannot have more than 31 entries',
+      }),
+    monthsOfYear: z
+      .array(z.number().int().min(1).max(12))
+      .optional()
+      .refine((arr: number[] | undefined) => !arr || arr.length <= 12, {
+        message: 'monthsOfYear cannot have more than 12 entries',
+      }),
+  })
+  .optional();
+
+/**
  * Common field combinations for reusability
  */
 const BaseReminderFields = {
@@ -144,6 +174,7 @@ const BaseReminderFields = {
   targetList: SafeListNameSchema,
   priority: PriorityValueSchema,
   flagged: z.boolean().optional(),
+  recurrence: RecurrenceRuleSchema,
 };
 
 export const SafeIdSchema = z.string().min(1, 'ID cannot be empty');
@@ -161,6 +192,7 @@ export const ReadRemindersSchema = z.object({
   dueWithin: DueWithinEnum,
   filterPriority: PriorityFilterEnum,
   filterFlagged: z.boolean().optional(),
+  filterRecurring: z.boolean().optional(),
 });
 
 export const UpdateReminderSchema = z.object({
@@ -173,6 +205,8 @@ export const UpdateReminderSchema = z.object({
   targetList: SafeListNameSchema,
   priority: PriorityValueSchema,
   flagged: z.boolean().optional(),
+  recurrence: RecurrenceRuleSchema,
+  clearRecurrence: z.boolean().optional(),
 });
 
 export const DeleteReminderSchema = z.object({
