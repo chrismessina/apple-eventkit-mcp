@@ -220,6 +220,32 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
           description:
             'Set to true to remove location trigger from an existing reminder (for update).',
         },
+        // Tag filtering
+        filterTags: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Filter reminders by tags (must have ALL specified tags). Example: ["work", "urgent"]',
+        },
+        // Tag properties for create/update
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Tags to set on the reminder (for create). Replaces any existing tags. Example: ["work", "urgent"]',
+        },
+        addTags: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Tags to add to the reminder (for update). Merges with existing tags. Example: ["followup"]',
+        },
+        removeTags: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Tags to remove from the reminder (for update). Example: ["urgent"]',
+        },
       },
       required: ['action'],
       dependentSchemas: {

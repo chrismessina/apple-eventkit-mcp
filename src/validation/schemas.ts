@@ -177,6 +177,19 @@ const LocationTriggerSchema = z
   .optional();
 
 /**
+ * Tag schema for reminder tags
+ */
+const TagSchema = z
+  .string()
+  .min(1)
+  .max(50)
+  .regex(/^[a-zA-Z0-9_-]+$/, {
+    message: 'Tags can only contain letters, numbers, underscores, and hyphens',
+  });
+
+const TagArraySchema = z.array(TagSchema).optional();
+
+/**
  * Common field combinations for reusability
  */
 const BaseReminderFields = {
@@ -189,6 +202,7 @@ const BaseReminderFields = {
   flagged: z.boolean().optional(),
   recurrence: RecurrenceRuleSchema,
   locationTrigger: LocationTriggerSchema,
+  tags: TagArraySchema,
 };
 
 export const SafeIdSchema = z.string().min(1, 'ID cannot be empty');
@@ -208,6 +222,7 @@ export const ReadRemindersSchema = z.object({
   filterFlagged: z.boolean().optional(),
   filterRecurring: z.boolean().optional(),
   filterLocationBased: z.boolean().optional(),
+  filterTags: TagArraySchema,
 });
 
 export const UpdateReminderSchema = z.object({
@@ -224,6 +239,9 @@ export const UpdateReminderSchema = z.object({
   clearRecurrence: z.boolean().optional(),
   locationTrigger: LocationTriggerSchema,
   clearLocationTrigger: z.boolean().optional(),
+  tags: TagArraySchema,
+  addTags: TagArraySchema,
+  removeTags: TagArraySchema,
 });
 
 export const DeleteReminderSchema = z.object({

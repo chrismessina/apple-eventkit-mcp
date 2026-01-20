@@ -19,6 +19,7 @@ import {
   addOptionalBooleanArg,
   nullToUndefined,
 } from './helpers.js';
+import { extractTags } from './tagUtils.js';
 
 class ReminderRepository {
   private mapReminder(reminder: ReminderJSON): Reminder {
@@ -57,6 +58,12 @@ class ReminderRepository {
         radius: reminder.locationTrigger.radius,
         proximity: reminder.locationTrigger.proximity === 'leave' ? 'leave' : 'enter',
       };
+    }
+
+    // Extract tags from notes
+    const tags = extractTags(reminder.notes);
+    if (tags.length > 0) {
+      normalizedReminder.tags = tags;
     }
 
     return normalizedReminder;

@@ -6,6 +6,7 @@
 import type { Reminder } from '../types/index.js';
 import { getTodayStart, getTomorrowStart, getWeekEnd } from './dateUtils.js';
 import { parseReminderDueDate } from './reminderDateParser.js';
+import { hasAllTags } from './tagUtils.js';
 
 /**
  * Date range filters for reminders
@@ -105,6 +106,7 @@ export interface ReminderFilters {
   flagged?: boolean;
   recurring?: boolean;
   locationBased?: boolean;
+  tags?: string[];
 }
 
 /**
@@ -174,6 +176,13 @@ export function applyReminderFilters(
   if (filters.locationBased !== undefined && filters.locationBased) {
     filteredReminders = filteredReminders.filter(
       (reminder) => reminder.locationTrigger !== undefined,
+    );
+  }
+
+  // Filter by tags (must have ALL specified tags)
+  if (filters.tags && filters.tags.length > 0) {
+    filteredReminders = filteredReminders.filter((reminder) =>
+      hasAllTags(reminder.tags, filters.tags!),
     );
   }
 

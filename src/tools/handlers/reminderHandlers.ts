@@ -14,6 +14,12 @@ import { handleAsyncOperation } from '../../utils/errorHandling.js';
 import { formatMultilineNotes } from '../../utils/helpers.js';
 import { reminderRepository } from '../../utils/reminderRepository.js';
 import {
+  addTagsToNotes,
+  combineTagsAndNotes,
+  removeTagsFromNotes,
+  stripTags,
+} from '../../utils/tagUtils.js';
+import {
   CreateReminderSchema,
   DeleteReminderSchema,
   ReadRemindersSchema,
@@ -91,18 +97,23 @@ const formatReminderMarkdown = (reminder: {
   isFlagged?: boolean;
   recurrence?: RecurrenceRule;
   locationTrigger?: LocationTrigger;
+  tags?: string[];
 }): string[] => {
   const lines: string[] = [];
   const checkbox = reminder.isCompleted ? '[x]' : '[ ]';
   const flagIcon = reminder.isFlagged ? ' 🚩' : '';
   const repeatIcon = reminder.recurrence ? ' 🔄' : '';
   const locationIcon = reminder.locationTrigger ? ' 📍' : '';
-  lines.push(`- ${checkbox} ${reminder.title}${flagIcon}${repeatIcon}${locationIcon}`);
+  const tagIcon = reminder.tags && reminder.tags.length > 0 ? ' 🏷️' : '';
+  lines.push(`- ${checkbox} ${reminder.title}${flagIcon}${repeatIcon}${locationIcon}${tagIcon}`);
   if (reminder.list) lines.push(`  - List: ${reminder.list}`);
   if (reminder.id) lines.push(`  - ID: ${reminder.id}`);
   if (reminder.priority !== undefined && reminder.priority > 0) {
     const priorityLabel = PRIORITY_LABELS[reminder.priority] || 'unknown';
     lines.push(`  - Priority: ${priorityLabel}`);
+  }
+  if (reminder.tags && reminder.tags.length > 0) {
+    lines.push(`  - Tags: ${reminder.tags.map((t) => `#${t}`).join(' ')}`);
   }
   if (reminder.recurrence) {
     lines.push(`  - Repeats: ${formatRecurrence(reminder.recurrence)}`);
@@ -110,8 +121,11 @@ const formatReminderMarkdown = (reminder: {
   if (reminder.locationTrigger) {
     lines.push(`  - Location: ${formatLocationTrigger(reminder.locationTrigger)}`);
   }
-  if (reminder.notes)
-    lines.push(`  - Notes: ${formatMultilineNotes(reminder.notes)}`);
+  // Show notes without tag markers
+  const cleanNotes = stripTags(reminder.notes);
+  if (cleanNotes) {
+    lines.push(`  - Notes: ${formatMultilineNotes(cleanNotes)}`);
+  }
   if (reminder.dueDate) lines.push(`  - Due: ${reminder.dueDate}`);
   if (reminder.url) lines.push(`  - URL: ${reminder.url}`);
   return lines;
@@ -122,9 +136,15 @@ export const handleCreateReminder = async (
 ): Promise<CallToolResult> => {
   return handleAsyncOperation(async () => {
     const validatedArgs = extractAndValidateArgs(args, CreateReminderSchema);
+
+    // Combine tags with notes if tags are provided
+    const notesWithTags = validatedArgs.tags
+      ? combineTagsAndNotes(validatedArgs.tags, validatedArgs.note)
+      : validatedArgs.note;
+
     const reminder = await reminderRepository.createReminder({
       title: validatedArgs.title,
-      notes: validatedArgs.note,
+      notes: notesWithTags,
       url: validatedArgs.url,
       list: validatedArgs.targetList,
       dueDate: validatedArgs.dueDate,
@@ -147,10 +167,49 @@ export const handleUpdateReminder = async (
 ): Promise<CallToolResult> => {
   return handleAsyncOperation(async () => {
     const validatedArgs = extractAndValidateArgs(args, UpdateReminderSchema);
+
+    // Handle tag modifications
+    let notesToSend = validatedArgs.note;
+
+    // If addTags or removeTags provided, we need to get the current reminder first
+    if (validatedArgs.addTags || validatedArgs.removeTags) {
+      const currentReminder = await reminderRepository.findReminderById(
+        validatedArgs.id,
+      );
+      let modifiedNotes = currentReminder.notes ?? '';
+
+      if (validatedArgs.addTags && validatedArgs.addTags.length > 0) {
+        modifiedNotes = addTagsToNotes(validatedArgs.addTags, modifiedNotes);
+      }
+
+      if (validatedArgs.removeTags && validatedArgs.removeTags.length > 0) {
+        modifiedNotes = removeTagsFromNotes(
+          validatedArgs.removeTags,
+          modifiedNotes,
+        );
+      }
+
+      // If note was also provided, use it but preserve tag changes
+      if (validatedArgs.note !== undefined) {
+        // Replace the clean note content but keep the modified tags
+        const cleanNewNote = stripTags(validatedArgs.note);
+        const tagsFromModified = modifiedNotes.match(/\[#[^\]]+\]/g) || [];
+        notesToSend =
+          tagsFromModified.length > 0
+            ? `${tagsFromModified.join(' ')}\n${cleanNewNote}`
+            : cleanNewNote;
+      } else {
+        notesToSend = modifiedNotes;
+      }
+    } else if (validatedArgs.tags) {
+      // Replace all tags with the provided tags
+      notesToSend = combineTagsAndNotes(validatedArgs.tags, validatedArgs.note);
+    }
+
     const reminder = await reminderRepository.updateReminder({
       id: validatedArgs.id,
       newTitle: validatedArgs.title,
-      notes: validatedArgs.note,
+      notes: notesToSend,
       url: validatedArgs.url,
       isCompleted: validatedArgs.completed,
       list: validatedArgs.targetList,
@@ -213,6 +272,7 @@ export const handleReadReminders = async (
       flagged: validatedArgs.filterFlagged,
       recurring: validatedArgs.filterRecurring,
       locationBased: validatedArgs.filterLocationBased,
+      tags: validatedArgs.filterTags,
     });
 
     return formatListMarkdown(

@@ -68,6 +68,7 @@ export interface Reminder {
   isFlagged: boolean;
   recurrence?: RecurrenceRule;
   locationTrigger?: LocationTrigger;
+  tags?: string[]; // Extracted from notes using [#tag] format
 }
 
 /**
@@ -178,6 +179,7 @@ export interface RemindersToolArgs extends BaseToolArgs {
   filterFlagged?: boolean;
   filterRecurring?: boolean;
   filterLocationBased?: boolean;
+  filterTags?: string[]; // Filter by tags (reminders must have ALL specified tags)
   // Single item parameters
   title?: string;
   newTitle?: string;
@@ -193,6 +195,10 @@ export interface RemindersToolArgs extends BaseToolArgs {
   // Location trigger parameters
   locationTrigger?: LocationTrigger;
   clearLocationTrigger?: boolean;
+  // Tag parameters
+  tags?: string[]; // Tags to add to the reminder
+  addTags?: string[]; // Tags to add (for update)
+  removeTags?: string[]; // Tags to remove (for update)
   // Target list for create/update operations
   targetList?: string;
 }
