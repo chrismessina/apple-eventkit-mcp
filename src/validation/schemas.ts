@@ -121,6 +121,18 @@ const DueWithinEnum = z
   .enum(['today', 'tomorrow', 'this-week', 'overdue', 'no-date'])
   .optional();
 
+const PriorityFilterEnum = z
+  .enum(['high', 'medium', 'low', 'none'])
+  .optional();
+
+const PriorityValueSchema = z
+  .number()
+  .int()
+  .refine((val) => [0, 1, 5, 9].includes(val), {
+    message: 'Priority must be 0 (none), 1 (high), 5 (medium), or 9 (low)',
+  })
+  .optional();
+
 /**
  * Common field combinations for reusability
  */
@@ -130,6 +142,8 @@ const BaseReminderFields = {
   note: SafeNoteSchema,
   url: SafeUrlSchema,
   targetList: SafeListNameSchema,
+  priority: PriorityValueSchema,
+  flagged: z.boolean().optional(),
 };
 
 export const SafeIdSchema = z.string().min(1, 'ID cannot be empty');
@@ -145,6 +159,8 @@ export const ReadRemindersSchema = z.object({
   showCompleted: z.boolean().optional().default(false),
   search: SafeSearchSchema,
   dueWithin: DueWithinEnum,
+  filterPriority: PriorityFilterEnum,
+  filterFlagged: z.boolean().optional(),
 });
 
 export const UpdateReminderSchema = z.object({
@@ -155,6 +171,8 @@ export const UpdateReminderSchema = z.object({
   url: SafeUrlSchema,
   completed: z.boolean().optional(),
   targetList: SafeListNameSchema,
+  priority: PriorityValueSchema,
+  flagged: z.boolean().optional(),
 });
 
 export const DeleteReminderSchema = z.object({

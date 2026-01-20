@@ -4,7 +4,7 @@
  */
 
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import type { RemindersToolArgs } from '../../types/index.js';
+import { PRIORITY_LABELS, type RemindersToolArgs } from '../../types/index.js';
 import { handleAsyncOperation } from '../../utils/errorHandling.js';
 import { formatMultilineNotes } from '../../utils/helpers.js';
 import { reminderRepository } from '../../utils/reminderRepository.js';
@@ -32,12 +32,19 @@ const formatReminderMarkdown = (reminder: {
   notes?: string;
   dueDate?: string;
   url?: string;
+  priority?: number;
+  isFlagged?: boolean;
 }): string[] => {
   const lines: string[] = [];
   const checkbox = reminder.isCompleted ? '[x]' : '[ ]';
-  lines.push(`- ${checkbox} ${reminder.title}`);
+  const flagIcon = reminder.isFlagged ? ' 🚩' : '';
+  lines.push(`- ${checkbox} ${reminder.title}${flagIcon}`);
   if (reminder.list) lines.push(`  - List: ${reminder.list}`);
   if (reminder.id) lines.push(`  - ID: ${reminder.id}`);
+  if (reminder.priority !== undefined && reminder.priority > 0) {
+    const priorityLabel = PRIORITY_LABELS[reminder.priority] || 'unknown';
+    lines.push(`  - Priority: ${priorityLabel}`);
+  }
   if (reminder.notes)
     lines.push(`  - Notes: ${formatMultilineNotes(reminder.notes)}`);
   if (reminder.dueDate) lines.push(`  - Due: ${reminder.dueDate}`);
@@ -56,6 +63,8 @@ export const handleCreateReminder = async (
       url: validatedArgs.url,
       list: validatedArgs.targetList,
       dueDate: validatedArgs.dueDate,
+      priority: validatedArgs.priority,
+      isFlagged: validatedArgs.flagged,
     });
     return formatSuccessMessage(
       'created',
@@ -79,6 +88,8 @@ export const handleUpdateReminder = async (
       isCompleted: validatedArgs.completed,
       list: validatedArgs.targetList,
       dueDate: validatedArgs.dueDate,
+      priority: validatedArgs.priority,
+      isFlagged: validatedArgs.flagged,
     });
     return formatSuccessMessage(
       'updated',
@@ -127,6 +138,8 @@ export const handleReadReminders = async (
       showCompleted: validatedArgs.showCompleted,
       search: validatedArgs.search,
       dueWithin: validatedArgs.dueWithin,
+      priority: validatedArgs.filterPriority,
+      flagged: validatedArgs.filterFlagged,
     });
 
     return formatListMarkdown(

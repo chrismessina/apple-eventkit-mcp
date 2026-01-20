@@ -79,6 +79,21 @@ function filterRemindersByDate(
 }
 
 /**
+ * Priority filter values (string names that map to EventKit integers)
+ */
+export type PriorityFilter = 'high' | 'medium' | 'low' | 'none';
+
+/**
+ * Maps priority filter strings to EventKit integer values
+ */
+const PRIORITY_FILTER_MAP: Record<PriorityFilter, number> = {
+  none: 0,
+  high: 1,
+  medium: 5,
+  low: 9,
+};
+
+/**
  * Filters for reminder search operations
  */
 export interface ReminderFilters {
@@ -86,6 +101,8 @@ export interface ReminderFilters {
   search?: string;
   dueWithin?: DateFilter;
   list?: string;
+  priority?: PriorityFilter;
+  flagged?: boolean;
 }
 
 /**
@@ -126,6 +143,21 @@ export function applyReminderFilters(
     filteredReminders = filterRemindersByDate(
       filteredReminders,
       filters.dueWithin,
+    );
+  }
+
+  // Filter by priority
+  if (filters.priority) {
+    const priorityValue = PRIORITY_FILTER_MAP[filters.priority];
+    filteredReminders = filteredReminders.filter(
+      (reminder) => reminder.priority === priorityValue,
+    );
+  }
+
+  // Filter by flagged status
+  if (filters.flagged !== undefined && filters.flagged) {
+    filteredReminders = filteredReminders.filter(
+      (reminder) => reminder.isFlagged === true,
     );
   }
 

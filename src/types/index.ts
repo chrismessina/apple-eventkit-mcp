@@ -4,6 +4,22 @@
  */
 
 /**
+ * Priority levels for reminders (native EventKit values)
+ * 0 = none, 1 = high, 5 = medium, 9 = low
+ */
+export type ReminderPriority = 0 | 1 | 5 | 9;
+
+/**
+ * Priority label mapping for display
+ */
+export const PRIORITY_LABELS: Record<number, string> = {
+  0: 'none',
+  1: 'high',
+  5: 'medium',
+  9: 'low',
+};
+
+/**
  * Reminder item interface
  */
 export interface Reminder {
@@ -14,6 +30,8 @@ export interface Reminder {
   url?: string; // Native URL field (currently limited by EventKit API)
   list: string;
   isCompleted: boolean;
+  priority: number; // 0=none, 1=high, 5=medium, 9=low
+  isFlagged: boolean;
 }
 
 /**
@@ -120,6 +138,8 @@ export interface RemindersToolArgs extends BaseToolArgs {
   showCompleted?: boolean;
   search?: string;
   dueWithin?: DueWithinOption;
+  filterPriority?: 'high' | 'medium' | 'low' | 'none';
+  filterFlagged?: boolean;
   // Single item parameters
   title?: string;
   newTitle?: string;
@@ -127,6 +147,8 @@ export interface RemindersToolArgs extends BaseToolArgs {
   note?: string;
   url?: string;
   completed?: boolean;
+  priority?: number; // 0=none, 1=high, 5=medium, 9=low
+  flagged?: boolean;
   // Target list for create/update operations
   targetList?: string;
 }

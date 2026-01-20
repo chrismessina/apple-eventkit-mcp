@@ -77,6 +77,10 @@ class ReminderRepository {
     addOptionalArg(args, '--note', data.notes);
     addOptionalArg(args, '--url', data.url);
     addOptionalArg(args, '--dueDate', data.dueDate);
+    if (data.priority !== undefined) {
+      args.push('--priority', String(data.priority));
+    }
+    addOptionalBooleanArg(args, '--isFlagged', data.isFlagged);
 
     return executeCli<ReminderJSON>(args);
   }
@@ -89,6 +93,10 @@ class ReminderRepository {
     addOptionalArg(args, '--url', data.url);
     addOptionalArg(args, '--dueDate', data.dueDate);
     addOptionalBooleanArg(args, '--isCompleted', data.isCompleted);
+    if (data.priority !== undefined) {
+      args.push('--priority', String(data.priority));
+    }
+    addOptionalBooleanArg(args, '--isFlagged', data.isFlagged);
 
     return executeCli<ReminderJSON>(args);
   }

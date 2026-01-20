@@ -8,7 +8,7 @@ struct ErrorOutput: Codable { let status = "error"; let message: String }
 struct ReadResult: Codable { let lists: [ListJSON]; let reminders: [ReminderJSON] }
 struct DeleteResult: Codable { let id: String; let deleted = true }
 struct DeleteListResult: Codable { let title: String; let deleted = true }
-struct ReminderJSON: Codable { let id: String, title: String, isCompleted: Bool, list: String, notes: String?, url: String?, dueDate: String? }
+struct ReminderJSON: Codable { let id: String, title: String, isCompleted: Bool, list: String, notes: String?, url: String?, dueDate: String?, priority: Int, isFlagged: Bool }
 struct ListJSON: Codable { let id: String, title: String }
 struct EventJSON: Codable { let id: String, title: String, calendar: String, startDate: String, endDate: String, notes: String?, location: String?, url: String?, isAllDay: Bool }
 struct CalendarJSON: Codable { let id: String, title: String }
@@ -232,10 +232,20 @@ class RemindersManager {
         return filtered.map { $0.toJSON() }
     }
 
-    func createReminder(title: String, listName: String?, notes: String?, urlString: String?, dueDateString: String?) throws -> ReminderJSON {
+    func createReminder(title: String, listName: String?, notes: String?, urlString: String?, dueDateString: String?, priority: Int?, isFlagged: Bool?) throws -> ReminderJSON {
         let reminder = EKReminder(eventStore: eventStore)
         reminder.calendar = try findList(named: listName)
         reminder.title = title
+
+        // Set priority (0=none, 1=high, 5=medium, 9=low)
+        if let p = priority {
+            reminder.priority = max(0, min(9, p))
+        }
+
+        // Set flagged status
+        if let flagged = isFlagged {
+            reminder.isFlagged = flagged
+        }
         
         // Handle URL: store in both URL field and append to notes
         var finalNotes = notes
@@ -266,7 +276,7 @@ class RemindersManager {
         return reminder.toJSON()
     }
 
-    func updateReminder(id: String, newTitle: String?, listName: String?, notes: String?, urlString: String?, isCompleted: Bool?, dueDateString: String?) throws -> ReminderJSON {
+    func updateReminder(id: String, newTitle: String?, listName: String?, notes: String?, urlString: String?, isCompleted: Bool?, dueDateString: String?, priority: Int?, isFlagged: Bool?) throws -> ReminderJSON {
         guard let reminder = findReminder(withId: id) else { throw NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "ID '\(id)' not found."]) }
         if let newTitle = newTitle { reminder.title = newTitle }
         
@@ -306,8 +316,18 @@ class RemindersManager {
         }
         
         if let finalNotes = finalNotes { reminder.notes = finalNotes }
-        
+
         if let isCompleted = isCompleted { reminder.isCompleted = isCompleted }
+
+        // Update priority (0=none, 1=high, 5=medium, 9=low)
+        if let p = priority {
+            reminder.priority = max(0, min(9, p))
+        }
+
+        // Update flagged status
+        if let flagged = isFlagged {
+            reminder.isFlagged = flagged
+        }
         if let listName = listName { reminder.calendar = try findList(named: listName) }
         if let dateStr = dueDateString {
             if let parsedComponents = parseDateComponents(from: dateStr) {
@@ -523,7 +543,9 @@ extension EKReminder {
             list: self.calendar.title,
             notes: self.notes,
             url: self.url?.absoluteString,
-            dueDate: formatDueDateWithTimezone(from: self.dueDateComponents, timeZoneHint: self.timeZone)
+            dueDate: formatDueDateWithTimezone(from: self.dueDateComponents, timeZoneHint: self.timeZone),
+            priority: self.priority,
+            isFlagged: self.isFlagged
         )
     }
 }
@@ -637,11 +659,11 @@ func main() {
                 print(String(data: try encoder.encode(StandardOutput(result: manager.getLists())), encoding: .utf8)!)
             case "create":
                 guard let title = parser.get("title") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--title required."]) }
-                let reminder = try manager.createReminder(title: title, listName: parser.get("targetList"), notes: parser.get("note"), urlString: parser.get("url"), dueDateString: parser.get("dueDate"))
+                let reminder = try manager.createReminder(title: title, listName: parser.get("targetList"), notes: parser.get("note"), urlString: parser.get("url"), dueDateString: parser.get("dueDate"), priority: parser.get("priority").flatMap { Int($0) }, isFlagged: parser.get("isFlagged").map { $0 == "true" })
                 print(String(data: try encoder.encode(StandardOutput(result: reminder)), encoding: .utf8)!)
             case "update":
                 guard let id = parser.get("id") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--id required."]) }
-                let reminder = try manager.updateReminder(id: id, newTitle: parser.get("title"), listName: parser.get("targetList"), notes: parser.get("note"), urlString: parser.get("url"), isCompleted: parser.get("isCompleted").map { $0 == "true" }, dueDateString: parser.get("dueDate"))
+                let reminder = try manager.updateReminder(id: id, newTitle: parser.get("title"), listName: parser.get("targetList"), notes: parser.get("note"), urlString: parser.get("url"), isCompleted: parser.get("isCompleted").map { $0 == "true" }, dueDateString: parser.get("dueDate"), priority: parser.get("priority").flatMap { Int($0) }, isFlagged: parser.get("isFlagged").map { $0 == "true" })
                 print(String(data: try encoder.encode(StandardOutput(result: reminder)), encoding: .utf8)!)
             case "delete":
                 guard let id = parser.get("id") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--id required."]) }

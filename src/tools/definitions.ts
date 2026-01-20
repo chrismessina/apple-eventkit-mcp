@@ -78,6 +78,17 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
           type: 'boolean',
           description: 'The completion status of the reminder (for update).',
         },
+        priority: {
+          type: 'integer',
+          enum: [0, 1, 5, 9],
+          description:
+            'Priority level: 0=none, 1=high, 5=medium, 9=low (for create/update).',
+        },
+        flagged: {
+          type: 'boolean',
+          description:
+            'Whether the reminder is flagged (shows flag icon in Reminders app).',
+        },
         targetList: {
           type: 'string',
           description: 'The name of the list for create or update operations.',
@@ -100,6 +111,15 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
           type: 'string',
           enum: DUE_WITHIN_OPTIONS,
           description: 'Filter reminders by a due date range.',
+        },
+        filterPriority: {
+          type: 'string',
+          enum: ['high', 'medium', 'low', 'none'],
+          description: 'Filter reminders by priority level.',
+        },
+        filterFlagged: {
+          type: 'boolean',
+          description: 'Filter to only show flagged reminders when true.',
         },
       },
       required: ['action'],
