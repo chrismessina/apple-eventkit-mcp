@@ -17,6 +17,8 @@ import { applyReminderFilters } from './dateFiltering.js';
 import {
   addOptionalArg,
   addOptionalBooleanArg,
+  addOptionalJsonArg,
+  addOptionalNumberArg,
   nullToUndefined,
 } from './helpers.js';
 import {
@@ -27,24 +29,19 @@ import { extractTags } from './tagUtils.js';
 
 class ReminderRepository {
   private mapReminder(reminder: ReminderJSON): Reminder {
+    // Convert null values to undefined for optional fields
+    // dueDate is passed through as-is from Swift CLI to avoid double timezone conversion
     const normalizedReminder = nullToUndefined(reminder, [
       'notes',
       'url',
       'dueDate',
     ]) as Reminder;
 
-    // Pass dueDate as-is from Swift CLI to avoid double timezone conversion
-    if (reminder.dueDate) {
-      normalizedReminder.dueDate = reminder.dueDate;
-    } else {
-      delete normalizedReminder.dueDate;
-    }
-
-    // Map recurrence from JSON (convert nulls to undefined)
+    // Map recurrence from JSON (convert nulls to undefined, default interval to 1)
     if (reminder.recurrence) {
       normalizedReminder.recurrence = {
         frequency: reminder.recurrence.frequency,
-        interval: reminder.recurrence.interval,
+        interval: reminder.recurrence.interval ?? 1,
         endDate: reminder.recurrence.endDate ?? undefined,
         occurrenceCount: reminder.recurrence.occurrenceCount ?? undefined,
         daysOfWeek: reminder.recurrence.daysOfWeek ?? undefined,
@@ -119,16 +116,9 @@ class ReminderRepository {
     addOptionalArg(args, '--note', data.notes);
     addOptionalArg(args, '--url', data.url);
     addOptionalArg(args, '--dueDate', data.dueDate);
-    if (data.priority !== undefined) {
-      args.push('--priority', String(data.priority));
-    }
-    addOptionalBooleanArg(args, '--isFlagged', data.isFlagged);
-    if (data.recurrence) {
-      args.push('--recurrence', JSON.stringify(data.recurrence));
-    }
-    if (data.locationTrigger) {
-      args.push('--locationTrigger', JSON.stringify(data.locationTrigger));
-    }
+    addOptionalNumberArg(args, '--priority', data.priority);
+    addOptionalJsonArg(args, '--recurrence', data.recurrence);
+    addOptionalJsonArg(args, '--locationTrigger', data.locationTrigger);
 
     return executeCli<ReminderJSON>(args);
   }
@@ -141,17 +131,10 @@ class ReminderRepository {
     addOptionalArg(args, '--url', data.url);
     addOptionalArg(args, '--dueDate', data.dueDate);
     addOptionalBooleanArg(args, '--isCompleted', data.isCompleted);
-    if (data.priority !== undefined) {
-      args.push('--priority', String(data.priority));
-    }
-    addOptionalBooleanArg(args, '--isFlagged', data.isFlagged);
-    if (data.recurrence) {
-      args.push('--recurrence', JSON.stringify(data.recurrence));
-    }
+    addOptionalNumberArg(args, '--priority', data.priority);
+    addOptionalJsonArg(args, '--recurrence', data.recurrence);
     addOptionalBooleanArg(args, '--clearRecurrence', data.clearRecurrence);
-    if (data.locationTrigger) {
-      args.push('--locationTrigger', JSON.stringify(data.locationTrigger));
-    }
+    addOptionalJsonArg(args, '--locationTrigger', data.locationTrigger);
     addOptionalBooleanArg(args, '--clearLocationTrigger', data.clearLocationTrigger);
 
     return executeCli<ReminderJSON>(args);

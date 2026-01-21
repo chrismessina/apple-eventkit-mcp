@@ -9,8 +9,11 @@ This document outlines a phased approach to adding **Priority Support**, **Subta
 | Feature      | Native EventKit Support                   | Implementation Approach        |
 | ------------ | ----------------------------------------- | ------------------------------ |
 | **Priority** | ✅ Full support via `EKReminder.priority` | Direct API integration         |
+| **Flagged**  | ❌ Not exposed in public API              | Not implementable - field always returns `false` |
 | **Subtasks** | ❌ Not exposed in public API              | Notes-based structured storage |
 | **Tags**     | ❌ Not exposed in public API              | Notes-based structured storage |
+
+> **Important**: Apple's EventKit framework does not expose the `isFlagged` property for reminders through its public API. While the Reminders app supports flagging reminders in the UI, this feature cannot be accessed programmatically. The `isFlagged` field is included in the API response for schema consistency but always returns `false`.
 
 ---
 
@@ -458,6 +461,7 @@ Update all reminder responses to include new fields:
   "title": "Team Meeting Prep",
   "priority": 1,
   "priorityLabel": "high",
+  "isFlagged": false,
   "tags": ["work", "meetings"],
   "subtasks": [
     { "id": "st-1", "title": "Review agenda", "isCompleted": true },
@@ -466,6 +470,8 @@ Update all reminder responses to include new fields:
   "subtaskProgress": "1/2 completed"
 }
 ```
+
+> **Note**: The `isFlagged` field is always `false` as EventKit does not expose this property.
 
 ### 4.4 Documentation Updates
 
@@ -518,7 +524,7 @@ Update all reminder responses to include new fields:
 
 ## Success Criteria
 
-### Phase 1 Complete When:
+### Phase 1 Complete When
 
 - [ ] Can create reminder with priority via MCP
 - [ ] Can update reminder priority
@@ -526,7 +532,7 @@ Update all reminder responses to include new fields:
 - [ ] Priority visible in native Reminders app
 - [ ] All tests passing (>90% coverage)
 
-### Phase 2 Complete When:
+### Phase 2 Complete When
 
 - [ ] Can add/remove/toggle subtasks
 - [ ] Subtasks visible as readable text in Reminders app notes
@@ -534,7 +540,7 @@ Update all reminder responses to include new fields:
 - [ ] Subtask reordering works
 - [ ] Round-trip parsing maintains data integrity
 
-### Phase 3 Complete When:
+### Phase 3 Complete When
 
 - [ ] Can add/remove tags from reminders
 - [ ] Can list all unique tags
@@ -542,7 +548,7 @@ Update all reminder responses to include new fields:
 - [ ] Tags visible in Reminders app notes
 - [ ] Cross-list tag queries work
 
-### Phase 4 Complete When:
+### Phase 4 Complete When
 
 - [ ] All prompts updated for new features
 - [ ] Documentation complete
@@ -593,6 +599,8 @@ For users with existing reminders using the MCP:
 
 ---
 
-_Document Version: 1.0_
+_Document Version: 1.1_
 _Last Updated: January 2026_
 _Author: Claude (AI Assistant)_
+
+_Revision Notes (v1.1): Updated to document that `isFlagged` property is not available in Apple's EventKit public API. The flagged parameter is accepted for API compatibility but has no effect._

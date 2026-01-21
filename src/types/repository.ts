@@ -8,7 +8,7 @@
  */
 export interface RecurrenceRuleJSON {
   frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
-  interval: number;
+  interval?: number; // Defaults to 1 if not provided
   endDate?: string | null;
   occurrenceCount?: number | null;
   daysOfWeek?: number[] | null; // 1 = Sunday, 7 = Saturday
@@ -23,7 +23,7 @@ export interface LocationTriggerJSON {
   title: string; // Location name/title
   latitude: number;
   longitude: number;
-  radius: number; // Geofence radius in meters
+  radius?: number; // Geofence radius in meters, defaults to 100
   proximity: 'enter' | 'leave' | 'none';
 }
 

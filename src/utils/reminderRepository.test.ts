@@ -154,7 +154,7 @@ describe('ReminderRepository', () => {
       const mockLists: ReminderList[] = [];
       const filters: ReminderFilters = { showCompleted: false };
       const filteredReminders: Reminder[] = [
-        { id: '1', title: 'Test 1', isCompleted: false, list: 'Default' },
+        { id: '1', title: 'Test 1', isCompleted: false, list: 'Default', priority: 0, isFlagged: false },
       ];
 
       mockExecuteCli.mockResolvedValue({
@@ -292,6 +292,8 @@ describe('ReminderRepository', () => {
         title: 'New Reminder',
         isCompleted: false,
         list: 'Default',
+        priority: 0,
+        isFlagged: false,
       };
 
       mockExecuteCli.mockResolvedValue(mockResult);
@@ -324,6 +326,8 @@ describe('ReminderRepository', () => {
         title: 'Simple Reminder',
         isCompleted: false,
         list: 'Default',
+        priority: 0,
+        isFlagged: false,
       };
 
       mockExecuteCli.mockResolvedValue(mockResult);
@@ -350,6 +354,8 @@ describe('ReminderRepository', () => {
         title: 'Test',
         isCompleted: false,
         list: 'Default',
+        priority: 0,
+        isFlagged: false,
       };
 
       mockExecuteCli.mockResolvedValue(mockResult);
@@ -379,6 +385,8 @@ describe('ReminderRepository', () => {
         title: 'Updated Title',
         isCompleted: false,
         list: 'Default',
+        priority: 0,
+        isFlagged: false,
       };
 
       mockExecuteCli.mockResolvedValue(mockResult);

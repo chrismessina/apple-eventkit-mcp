@@ -4,12 +4,45 @@ import EventKit
 import CoreLocation
 
 // MARK: - Output Structures & JSON Models
-struct StandardOutput<T: Codable>: Codable { let status = "success"; let result: T }
-struct ErrorOutput: Codable { let status = "error"; let message: String }
-struct ReadResult: Codable { let lists: [ListJSON]; let reminders: [ReminderJSON] }
-struct DeleteResult: Codable { let id: String; let deleted = true }
-struct DeleteListResult: Codable { let title: String; let deleted = true }
-struct ReminderJSON: Codable { let id: String, title: String, isCompleted: Bool, list: String, notes: String?, url: String?, dueDate: String?, priority: Int, isFlagged: Bool, recurrence: RecurrenceRuleJSON?, locationTrigger: LocationTriggerJSON? }
+
+struct StandardOutput<T: Codable>: Codable {
+    let status = "success"
+    let result: T
+}
+
+struct ErrorOutput: Codable {
+    let status = "error"
+    let message: String
+}
+
+struct ReadResult: Codable {
+    let lists: [ListJSON]
+    let reminders: [ReminderJSON]
+}
+
+struct DeleteResult: Codable {
+    let id: String
+    let deleted = true
+}
+
+struct DeleteListResult: Codable {
+    let title: String
+    let deleted = true
+}
+
+struct ReminderJSON: Codable {
+    let id: String
+    let title: String
+    let isCompleted: Bool
+    let list: String
+    let notes: String?
+    let url: String?
+    let dueDate: String?
+    let priority: Int
+    let isFlagged: Bool = false  // Not available in EventKit public API
+    let recurrence: RecurrenceRuleJSON?
+    let locationTrigger: LocationTriggerJSON?
+}
 
 // MARK: - Location Trigger Models
 struct LocationTriggerJSON: Codable {
@@ -177,10 +210,32 @@ private func parseDate(from dateString: String) -> Date? {
     basicFormatter.dateFormat = "yyyy-MM-dd"
     return basicFormatter.date(from: dateString)
 }
-struct ListJSON: Codable { let id: String, title: String }
-struct EventJSON: Codable { let id: String, title: String, calendar: String, startDate: String, endDate: String, notes: String?, location: String?, url: String?, isAllDay: Bool }
-struct CalendarJSON: Codable { let id: String, title: String }
-struct EventsReadResult: Codable { let calendars: [CalendarJSON]; let events: [EventJSON] }
+struct ListJSON: Codable {
+    let id: String
+    let title: String
+}
+
+struct EventJSON: Codable {
+    let id: String
+    let title: String
+    let calendar: String
+    let startDate: String
+    let endDate: String
+    let notes: String?
+    let location: String?
+    let url: String?
+    let isAllDay: Bool
+}
+
+struct CalendarJSON: Codable {
+    let id: String
+    let title: String
+}
+
+struct EventsReadResult: Codable {
+    let calendars: [CalendarJSON]
+    let events: [EventJSON]
+}
 
 // MARK: - Date Parsing Helper (Robust Implementation)
 private struct ExplicitTimezone {
@@ -400,7 +455,7 @@ class RemindersManager {
         return filtered.map { $0.toJSON() }
     }
 
-    func createReminder(title: String, listName: String?, notes: String?, urlString: String?, dueDateString: String?, priority: Int?, isFlagged: Bool?, recurrenceJSON: String?, locationTriggerJSON: String?) throws -> ReminderJSON {
+    func createReminder(title: String, listName: String?, notes: String?, urlString: String?, dueDateString: String?, priority: Int?, recurrenceJSON: String?, locationTriggerJSON: String?) throws -> ReminderJSON {
         let reminder = EKReminder(eventStore: eventStore)
         reminder.calendar = try findList(named: listName)
         reminder.title = title
@@ -410,10 +465,7 @@ class RemindersManager {
             reminder.priority = max(0, min(9, p))
         }
 
-        // Set flagged status
-        if let flagged = isFlagged {
-            reminder.isFlagged = flagged
-        }
+        // Note: isFlagged is not available in EventKit public API
 
         // Set recurrence rule
         if let recJSON = recurrenceJSON, let recRule = parseRecurrenceRule(from: recJSON) {
@@ -457,7 +509,7 @@ class RemindersManager {
         return reminder.toJSON()
     }
 
-    func updateReminder(id: String, newTitle: String?, listName: String?, notes: String?, urlString: String?, isCompleted: Bool?, dueDateString: String?, priority: Int?, isFlagged: Bool?, recurrenceJSON: String?, clearRecurrence: Bool?, locationTriggerJSON: String?, clearLocationTrigger: Bool?) throws -> ReminderJSON {
+    func updateReminder(id: String, newTitle: String?, listName: String?, notes: String?, urlString: String?, isCompleted: Bool?, dueDateString: String?, priority: Int?, recurrenceJSON: String?, clearRecurrence: Bool?, locationTriggerJSON: String?, clearLocationTrigger: Bool?) throws -> ReminderJSON {
         guard let reminder = findReminder(withId: id) else { throw NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "ID '\(id)' not found."]) }
         if let newTitle = newTitle { reminder.title = newTitle }
 
@@ -505,10 +557,7 @@ class RemindersManager {
             reminder.priority = max(0, min(9, p))
         }
 
-        // Update flagged status
-        if let flagged = isFlagged {
-            reminder.isFlagged = flagged
-        }
+        // Note: isFlagged is not available in EventKit public API
 
         // Update recurrence rule
         if clearRecurrence == true {
@@ -569,9 +618,23 @@ class RemindersManager {
         }
         try eventStore.remove(reminder, commit: true)
     }
-    func createList(title: String) throws -> ListJSON { let list = EKCalendar(for: .reminder, eventStore: eventStore); list.title = title; try eventStore.saveCalendar(list, commit: true); return list.toJSON() }
-    func updateList(currentName: String, newName: String) throws -> ListJSON { let list = try findList(named: currentName); list.title = newName; try eventStore.saveCalendar(list, commit: true); return list.toJSON() }
-    func deleteList(title: String) throws { try eventStore.removeCalendar(try findList(named: title), commit: true) }
+    func createList(title: String) throws -> ListJSON {
+        let list = EKCalendar(for: .reminder, eventStore: eventStore)
+        list.title = title
+        try eventStore.saveCalendar(list, commit: true)
+        return list.toJSON()
+    }
+
+    func updateList(currentName: String, newName: String) throws -> ListJSON {
+        let list = try findList(named: currentName)
+        list.title = newName
+        try eventStore.saveCalendar(list, commit: true)
+        return list.toJSON()
+    }
+
+    func deleteList(title: String) throws {
+        try eventStore.removeCalendar(try findList(named: title), commit: true)
+    }
     
     // MARK: Calendar Events Management
     private func findCalendar(named name: String?) throws -> EKCalendar {
@@ -785,15 +848,20 @@ extension EKReminder {
             url: self.url?.absoluteString,
             dueDate: formatDueDateWithTimezone(from: self.dueDateComponents, timeZoneHint: self.timeZone),
             priority: self.priority,
-            isFlagged: self.isFlagged,
+            // isFlagged is not available in EventKit public API - always returns false
             recurrence: recurrenceRule,
             locationTrigger: locationTrigger
         )
     }
 }
-extension EKCalendar { 
-    func toJSON() -> ListJSON { ListJSON(id: self.calendarIdentifier, title: self.title) }
-    func toCalendarJSON() -> CalendarJSON { CalendarJSON(id: self.calendarIdentifier, title: self.title) }
+extension EKCalendar {
+    func toJSON() -> ListJSON {
+        ListJSON(id: self.calendarIdentifier, title: self.title)
+    }
+
+    func toCalendarJSON() -> CalendarJSON {
+        CalendarJSON(id: self.calendarIdentifier, title: self.title)
+    }
 }
 
 private func formatEventDate(_ date: Date, preferredTimeZone: TimeZone, includeTime: Bool) -> String {
@@ -824,13 +892,45 @@ extension EKEvent {
     }
 }
 
-struct ArgumentParser { private let args: [String: String]; init() { var dict = [String: String](); var i=0; let arguments=Array(CommandLine.arguments.dropFirst()); while i<arguments.count { let key=arguments[i].replacingOccurrences(of:"--",with:""); if i+1<arguments.count && !arguments[i+1].hasPrefix("--") { dict[key]=arguments[i+1]; i+=2 } else { dict[key]="true"; i+=1 } }; self.args=dict }; func get(_ key: String)->String?{return args[key]} }
+struct ArgumentParser {
+    private let args: [String: String]
+
+    init() {
+        var dict = [String: String]()
+        var i = 0
+        let arguments = Array(CommandLine.arguments.dropFirst())
+
+        while i < arguments.count {
+            let key = arguments[i].replacingOccurrences(of: "--", with: "")
+            if i + 1 < arguments.count && !arguments[i + 1].hasPrefix("--") {
+                dict[key] = arguments[i + 1]
+                i += 2
+            } else {
+                dict[key] = "true"
+                i += 1
+            }
+        }
+        self.args = dict
+    }
+
+    func get(_ key: String) -> String? {
+        return args[key]
+    }
+}
 
 func main() {
     let parser = ArgumentParser()
     let manager = RemindersManager()
-    let encoder = JSONEncoder(); encoder.outputFormatting = .prettyPrinted
-    let outputError = { (m: String) in if let d=try?encoder.encode(ErrorOutput(message:m)), let j=String(data:d,encoding:.utf8){print(j)}; exit(1) }
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = .prettyPrinted
+
+    let outputError = { (message: String) in
+        if let data = try? encoder.encode(ErrorOutput(message: message)),
+           let json = String(data: data, encoding: .utf8) {
+            print(json)
+        }
+        exit(1)
+    }
     
     let action = parser.get("action") ?? ""
 
@@ -901,11 +1001,11 @@ func main() {
                 print(String(data: try encoder.encode(StandardOutput(result: manager.getLists())), encoding: .utf8)!)
             case "create":
                 guard let title = parser.get("title") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--title required."]) }
-                let reminder = try manager.createReminder(title: title, listName: parser.get("targetList"), notes: parser.get("note"), urlString: parser.get("url"), dueDateString: parser.get("dueDate"), priority: parser.get("priority").flatMap { Int($0) }, isFlagged: parser.get("isFlagged").map { $0 == "true" }, recurrenceJSON: parser.get("recurrence"), locationTriggerJSON: parser.get("locationTrigger"))
+                let reminder = try manager.createReminder(title: title, listName: parser.get("targetList"), notes: parser.get("note"), urlString: parser.get("url"), dueDateString: parser.get("dueDate"), priority: parser.get("priority").flatMap { Int($0) }, recurrenceJSON: parser.get("recurrence"), locationTriggerJSON: parser.get("locationTrigger"))
                 print(String(data: try encoder.encode(StandardOutput(result: reminder)), encoding: .utf8)!)
             case "update":
                 guard let id = parser.get("id") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--id required."]) }
-                let reminder = try manager.updateReminder(id: id, newTitle: parser.get("title"), listName: parser.get("targetList"), notes: parser.get("note"), urlString: parser.get("url"), isCompleted: parser.get("isCompleted").map { $0 == "true" }, dueDateString: parser.get("dueDate"), priority: parser.get("priority").flatMap { Int($0) }, isFlagged: parser.get("isFlagged").map { $0 == "true" }, recurrenceJSON: parser.get("recurrence"), clearRecurrence: parser.get("clearRecurrence").map { $0 == "true" }, locationTriggerJSON: parser.get("locationTrigger"), clearLocationTrigger: parser.get("clearLocationTrigger").map { $0 == "true" })
+                let reminder = try manager.updateReminder(id: id, newTitle: parser.get("title"), listName: parser.get("targetList"), notes: parser.get("note"), urlString: parser.get("url"), isCompleted: parser.get("isCompleted").map { $0 == "true" }, dueDateString: parser.get("dueDate"), priority: parser.get("priority").flatMap { Int($0) }, recurrenceJSON: parser.get("recurrence"), clearRecurrence: parser.get("clearRecurrence").map { $0 == "true" }, locationTriggerJSON: parser.get("locationTrigger"), clearLocationTrigger: parser.get("clearLocationTrigger").map { $0 == "true" })
                 print(String(data: try encoder.encode(StandardOutput(result: reminder)), encoding: .utf8)!)
             case "delete":
                 guard let id = parser.get("id") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--id required."]) }

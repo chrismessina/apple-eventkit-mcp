@@ -17,11 +17,13 @@ A Model Context Protocol (MCP) server that provides native integration with Appl
 
 ### Enhanced Reminder Features (v1.3.0)
 
-- **Priority & Flagged Status**: Set reminder priority (high/medium/low/none) and flagged status with visual indicators
+- **Priority Support**: Set reminder priority (high/medium/low/none) with visual indicators
 - **Recurring Reminders**: Create repeating reminders with flexible recurrence rules (daily, weekly, monthly, yearly)
 - **Location-Based Triggers**: Set geofence reminders that trigger when arriving at or leaving a location
 - **Tags/Labels**: Organize reminders with custom tags for cross-list categorization and filtering
 - **Subtasks/Checklists**: Add checklist items to reminders with progress tracking
+
+> **Note**: The `flagged` parameter is accepted for API compatibility but has no effect. Apple's EventKit framework does not expose a public `isFlagged` property for reminders, so flagged status cannot be read or set programmatically.
 
 ### Advanced Features
 
@@ -173,11 +175,11 @@ Create a reminder in my "Work" list to "Submit report" due next Friday.
 Create a reminder with URL "Check this website: https://google.com".
 ```
 
-### Creating Reminders with Priority and Flags
+### Creating Reminders with Priority
 
 ```text
 Create a high priority reminder to "Finish quarterly report" due Friday.
-Add an urgent flagged reminder to "Call client back" for today.
+Add an urgent high-priority reminder to "Call client back" for today.
 Create a medium priority reminder to "Review documents".
 ```
 
@@ -227,7 +229,6 @@ Reorder the subtasks in my packing list.
 
 ```text
 Show me all high priority reminders.
-List all flagged reminders.
 Show reminders tagged with "work".
 Show recurring reminders only.
 Find location-based reminders.
@@ -242,7 +243,6 @@ Update "Call mom" reminder to be due today at 6 PM.
 Update the reminder "Submit report" and mark it as completed.
 Change the notes on "Buy groceries" to "Don't forget milk and eggs".
 Set priority to high on my "Finish report" reminder.
-Flag the "Important meeting" reminder.
 Add the tag "urgent" to my "Review PR" reminder.
 ```
 
@@ -312,7 +312,6 @@ Manages individual reminder tasks with full CRUD support, including priority, fl
 - `search` _(optional)_: Search term to filter reminders by title or content
 - `dueWithin` _(optional)_: Filter by due date range ("today", "tomorrow", "this-week", "overdue", "no-date")
 - `filterPriority` _(optional)_: Filter by priority level ("high", "medium", "low", "none")
-- `filterFlagged` _(optional)_: Filter to only show flagged reminders when true
 - `filterRecurring` _(optional)_: Filter to only show recurring reminders when true
 - `filterLocationBased` _(optional)_: Filter to only show location-based reminders when true
 - `filterTags` _(optional)_: Filter by tags (reminders must have ALL specified tags)
@@ -325,7 +324,6 @@ Manages individual reminder tasks with full CRUD support, including priority, fl
 - `note` _(optional)_: Note text to attach to the reminder
 - `url` _(optional)_: URL to associate with the reminder
 - `priority` _(optional)_: Priority level (0=none, 1=high, 5=medium, 9=low)
-- `flagged` _(optional)_: Whether the reminder should be flagged
 - `recurrence` _(optional)_: Recurrence rule object (see Recurrence section below)
 - `locationTrigger` _(optional)_: Location trigger object (see Location Triggers section below)
 - `tags` _(optional)_: Array of tags to add to the reminder
@@ -341,7 +339,6 @@ Manages individual reminder tasks with full CRUD support, including priority, fl
 - `completed` _(optional)_: Mark reminder as completed/uncompleted
 - `targetList` _(optional)_: Name of the list containing the reminder
 - `priority` _(optional)_: New priority level (0=none, 1=high, 5=medium, 9=low)
-- `flagged` _(optional)_: New flagged status
 - `recurrence` _(optional)_: New recurrence rule (or set to update)
 - `clearRecurrence` _(optional)_: Set to true to remove recurrence
 - `locationTrigger` _(optional)_: New location trigger
@@ -372,11 +369,11 @@ Manages individual reminder tasks with full CRUD support, including priority, fl
 
 ```json
 {
-  "title": "Home",           // Location name
-  "latitude": 37.7749,       // Latitude coordinate
-  "longitude": -122.4194,    // Longitude coordinate
-  "radius": 100,             // Geofence radius in meters (default: 100)
-  "proximity": "enter"       // "enter" or "leave"
+  "title": "Home", // Location name
+  "latitude": 37.7749, // Latitude coordinate
+  "longitude": -122.4194, // Longitude coordinate
+  "radius": 100, // Geofence radius in meters (default: 100)
+  "proximity": "enter" // "enter" or "leave"
 }
 ```
 
@@ -390,7 +387,6 @@ Manages individual reminder tasks with full CRUD support, including priority, fl
   "targetList": "Shopping",
   "note": "Don't forget milk and eggs",
   "priority": 1,
-  "flagged": true,
   "tags": ["shopping", "errands"],
   "subtasks": ["Milk", "Eggs", "Bread"]
 }
@@ -671,7 +667,6 @@ Returns the available calendars from EventKit. This is useful before creating or
 
 When reading reminders, the output includes visual indicators for enhanced features:
 
-- 🚩 - Flagged reminder
 - 🔄 - Recurring reminder
 - 📍 - Location-based reminder
 - 🏷️ - Has tags
@@ -680,7 +675,7 @@ When reading reminders, the output includes visual indicators for enhanced featu
 Example output:
 
 ```text
-- [ ] Buy groceries 🚩🏷️📋
+- [ ] Buy groceries 🏷️📋
   - List: Shopping
   - ID: reminder-123
   - Priority: high
@@ -737,7 +732,7 @@ const urlsRegex = reminder.notes?.match(/https?:\/\/[^\s]+/g) || [];
       "isCompleted": false,
       "dueDate": "2024-03-25 18:00:00",
       "priority": 1,
-      "isFlagged": true,
+      "isFlagged": false,
       "tags": ["shopping", "errands"],
       "subtasks": [
         { "id": "a1b2c3d4", "title": "Milk", "isCompleted": true },
@@ -755,6 +750,8 @@ const urlsRegex = reminder.notes?.match(/https?:\/\/[^\s]+/g) || [];
   }
 }
 ```
+
+> **Note**: The `isFlagged` field is always `false` because Apple's EventKit does not expose the flagged status through its public API.
 
 ## Organization Strategies
 
@@ -889,19 +886,19 @@ Contributions welcome! Please read the contributing guidelines first.
 pnpm install
 ```
 
-2. Build the project (TypeScript and Swift binary) before invoking the CLI:
+1. Build the project (TypeScript and Swift binary) before invoking the CLI:
 
 ```bash
 pnpm build
 ```
 
-3. Run the full test suite to validate TypeScript, Swift bridge shims, and prompt templates:
+1. Run the full test suite to validate TypeScript, Swift bridge shims, and prompt templates:
 
 ```bash
 pnpm test
 ```
 
-4. Lint and format with Biome prior to committing:
+1. Lint and format with Biome prior to committing:
 
 ```bash
 pnpm exec biome check
@@ -950,11 +947,13 @@ The CLI entry point includes a project-root fallback, so you can start the serve
 
 ### v1.3.0 (Enhanced Reminders)
 
-- **Priority & Flagged Status**: Set priority levels (high/medium/low/none) and flagged status
+- **Priority Support**: Set priority levels (high/medium/low/none) via native EventKit API
 - **Recurring Reminders**: Support for daily, weekly, monthly, yearly recurrence with flexible rules
 - **Location Triggers**: Geofence-based reminders that trigger on arrival or departure
 - **Tags/Labels**: Cross-list categorization with `[#tag]` format stored in notes
 - **Subtasks/Checklists**: Checklist items with progress tracking stored in notes
 - **New Tool**: `reminders_subtasks` for managing checklist items
-- **Enhanced Filtering**: Filter by priority, flagged status, recurring, location-based, and tags
-- **Visual Indicators**: 🚩 (flagged), 🔄 (recurring), 📍 (location), 🏷️ (tags), 📋 (subtasks)
+- **Enhanced Filtering**: Filter by priority, recurring, location-based, and tags
+- **Visual Indicators**: 🔄 (recurring), 📍 (location), 🏷️ (tags), 📋 (subtasks)
+
+> **Note on Flagged Status**: The `flagged` parameter is accepted for backward compatibility but has no effect. Apple's EventKit framework does not expose a public `isFlagged` property, so flagged status cannot be read or set programmatically. The `isFlagged` field in responses is always `false`.

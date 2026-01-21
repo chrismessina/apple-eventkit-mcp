@@ -6,6 +6,19 @@
 import type { Reminder } from '../types/index.js';
 import { applyReminderFilters, type ReminderFilters } from './dateFiltering.js';
 
+/**
+ * Factory function to create test reminders with sensible defaults
+ */
+function createReminder(overrides: Partial<Reminder> & { id: string; title: string }): Reminder {
+  return {
+    list: 'Default',
+    isCompleted: false,
+    priority: 0,
+    isFlagged: false,
+    ...overrides,
+  };
+}
+
 const DEFAULT_TZ = process.env.TZ;
 const MOCK_NOW_ISO = '2024-01-15T12:00:00.000Z';
 const RealDate = global.Date;
@@ -58,38 +71,11 @@ describe('DateFiltering', () => {
 
   describe('applyReminderFilters', () => {
     const reminders: Reminder[] = [
-      {
-        id: '1',
-        title: 'Active reminder',
-        list: 'Default',
-        isCompleted: false,
-      },
-      {
-        id: '2',
-        title: 'Completed reminder',
-        list: 'Default',
-        isCompleted: true,
-      },
-      {
-        id: '3',
-        title: 'Work reminder',
-        list: 'Work',
-        isCompleted: false,
-      },
-      {
-        id: '4',
-        title: 'Project meeting',
-        notes: 'Discuss project timeline',
-        list: 'Work',
-        isCompleted: false,
-      },
-      {
-        id: '5',
-        title: 'Personal task',
-        dueDate: '2024-01-15T10:00:00Z',
-        list: 'Personal',
-        isCompleted: false,
-      },
+      createReminder({ id: '1', title: 'Active reminder' }),
+      createReminder({ id: '2', title: 'Completed reminder', isCompleted: true }),
+      createReminder({ id: '3', title: 'Work reminder', list: 'Work' }),
+      createReminder({ id: '4', title: 'Project meeting', list: 'Work', notes: 'Discuss project timeline' }),
+      createReminder({ id: '5', title: 'Personal task', list: 'Personal', dueDate: '2024-01-15T10:00:00Z' }),
     ];
 
     it('should filter by completion status', () => {
@@ -183,27 +169,9 @@ describe('DateFiltering', () => {
 
     it('should filter overdue reminders', () => {
       const overdueReminders: Reminder[] = [
-        {
-          id: '1',
-          title: 'Overdue task',
-          dueDate: '2024-01-10T10:00:00Z',
-          list: 'Default',
-          isCompleted: false,
-        },
-        {
-          id: '2',
-          title: 'Current task',
-          dueDate: '2024-01-15T10:00:00Z',
-          list: 'Default',
-          isCompleted: false,
-        },
-        {
-          id: '3',
-          title: 'Future task',
-          dueDate: '2024-01-20T10:00:00Z',
-          list: 'Default',
-          isCompleted: false,
-        },
+        createReminder({ id: '1', title: 'Overdue task', dueDate: '2024-01-10T10:00:00Z' }),
+        createReminder({ id: '2', title: 'Current task', dueDate: '2024-01-15T10:00:00Z' }),
+        createReminder({ id: '3', title: 'Future task', dueDate: '2024-01-20T10:00:00Z' }),
       ];
 
       const filters: ReminderFilters = { dueWithin: 'overdue' };
@@ -215,27 +183,9 @@ describe('DateFiltering', () => {
 
     it('should filter tomorrow reminders', () => {
       const tomorrowReminders: Reminder[] = [
-        {
-          id: '1',
-          title: 'Today task',
-          dueDate: '2024-01-15T10:00:00Z',
-          list: 'Default',
-          isCompleted: false,
-        },
-        {
-          id: '2',
-          title: 'Tomorrow task',
-          dueDate: '2024-01-16T10:00:00Z',
-          list: 'Default',
-          isCompleted: false,
-        },
-        {
-          id: '3',
-          title: 'Day after tomorrow task',
-          dueDate: '2024-01-17T10:00:00Z',
-          list: 'Default',
-          isCompleted: false,
-        },
+        createReminder({ id: '1', title: 'Today task', dueDate: '2024-01-15T10:00:00Z' }),
+        createReminder({ id: '2', title: 'Tomorrow task', dueDate: '2024-01-16T10:00:00Z' }),
+        createReminder({ id: '3', title: 'Day after tomorrow task', dueDate: '2024-01-17T10:00:00Z' }),
       ];
 
       const filters: ReminderFilters = { dueWithin: 'tomorrow' };
@@ -247,27 +197,9 @@ describe('DateFiltering', () => {
 
     it('should filter this-week reminders', () => {
       const weekReminders: Reminder[] = [
-        {
-          id: '1',
-          title: 'Last week task',
-          dueDate: '2024-01-08T10:00:00Z',
-          list: 'Default',
-          isCompleted: false,
-        },
-        {
-          id: '2',
-          title: 'This week task',
-          dueDate: '2024-01-17T10:00:00Z',
-          list: 'Default',
-          isCompleted: false,
-        },
-        {
-          id: '3',
-          title: 'Next week task',
-          dueDate: '2024-01-25T10:00:00Z',
-          list: 'Default',
-          isCompleted: false,
-        },
+        createReminder({ id: '1', title: 'Last week task', dueDate: '2024-01-08T10:00:00Z' }),
+        createReminder({ id: '2', title: 'This week task', dueDate: '2024-01-17T10:00:00Z' }),
+        createReminder({ id: '3', title: 'Next week task', dueDate: '2024-01-25T10:00:00Z' }),
       ];
 
       const filters: ReminderFilters = { dueWithin: 'this-week' };
@@ -279,20 +211,8 @@ describe('DateFiltering', () => {
 
     it('should handle unknown dueWithin filter (default branch)', () => {
       const allReminders: Reminder[] = [
-        {
-          id: '1',
-          title: 'Any reminder',
-          dueDate: '2024-01-15T10:00:00Z',
-          list: 'Default',
-          isCompleted: false,
-        },
-        {
-          id: '2',
-          title: 'Another reminder',
-          dueDate: '2024-01-16T10:00:00Z',
-          list: 'Default',
-          isCompleted: false,
-        },
+        createReminder({ id: '1', title: 'Any reminder', dueDate: '2024-01-15T10:00:00Z' }),
+        createReminder({ id: '2', title: 'Another reminder', dueDate: '2024-01-16T10:00:00Z' }),
       ];
 
       // Testing unknown filter value - using type assertion to bypass type checking
@@ -310,13 +230,7 @@ describe('DateFiltering', () => {
       it('should treat YYYY-MM-DD due dates as today for America/New_York timezone', () => {
         setTimezoneAndResetDateMock('America/New_York');
         const floatingReminders: Reminder[] = [
-          {
-            id: 'floating-date',
-            title: 'Floating date',
-            dueDate: '2024-01-15',
-            list: 'Default',
-            isCompleted: false,
-          },
+          createReminder({ id: 'floating-date', title: 'Floating date', dueDate: '2024-01-15' }),
         ];
 
         const result = applyReminderFilters(floatingReminders, {
@@ -330,13 +244,7 @@ describe('DateFiltering', () => {
       it('should treat local datetime strings without timezone as today for America/New_York timezone', () => {
         setTimezoneAndResetDateMock('America/New_York');
         const floatingDateTimeReminders: Reminder[] = [
-          {
-            id: 'floating-datetime',
-            title: 'Floating datetime',
-            dueDate: '2024-01-15 09:30:00',
-            list: 'Default',
-            isCompleted: false,
-          },
+          createReminder({ id: 'floating-datetime', title: 'Floating datetime', dueDate: '2024-01-15 09:30:00' }),
         ];
 
         const result = applyReminderFilters(floatingDateTimeReminders, {
