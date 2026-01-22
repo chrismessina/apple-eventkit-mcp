@@ -4,11 +4,7 @@
 
 English | [简体中文](README.zh-CN.md)
 
-<<<<<<< HEAD
-A Model Context Protocol (MCP) server that uses EventKit to operate Apple Calendar and Apple Reminders on macOS.
-=======
 A Model Context Protocol (MCP) server that provides native integration with Apple Reminders and Calendar on macOS. This server allows you to interact with Apple Reminders and Calendar Events through a standardized interface with comprehensive management capabilities.
->>>>>>> pr-55
 
 ## Features
 
@@ -17,7 +13,7 @@ A Model Context Protocol (MCP) server that provides native integration with Appl
 - **List Management**: View all reminders and reminder lists with advanced filtering options
 - **Reminder Operations**: Full CRUD operations (Create, Read, Update, Delete) for reminders across lists
 - **Rich Content Support**: Complete support for titles, notes, due dates, URLs, and completion status
-- **Native macOS Integration**: Uses EventKit to operate Apple Calendar and Apple Reminders
+- **Native macOS Integration**: Direct integration with Apple Reminders using EventKit framework
 
 ### Enhanced Reminder Features (v1.3.0)
 
@@ -42,7 +38,7 @@ A Model Context Protocol (MCP) server that provides native integration with Appl
 
 - **Clean Architecture**: 4-layer architecture following Clean Architecture principles with dependency injection
 - **Type Safety**: Complete TypeScript coverage with Zod schema validation for runtime type checking
-- **High Performance**: Swift-compiled binaries for performance-critical Apple Reminders and Calendar operations
+- **High Performance**: Swift-compiled binaries for performance-critical Apple Reminders operations
 - **Robust Error Handling**: Consistent error responses with detailed diagnostic information
 - **Repository Pattern**: Data access abstraction with standardized CRUD operations
 - **Functional Programming**: Pure functions with immutable data structures where appropriate
@@ -56,11 +52,7 @@ A Model Context Protocol (MCP) server that provides native integration with Appl
 
 ## macOS Permission Requirements (Sonoma 14+ / Sequoia 15)
 
-<<<<<<< HEAD
-Apple now separates Reminders and Calendar permissions into *write-only* and *full-access* scopes. The Swift bridge declares the following privacy keys so the tool can read and write data when you approve access:
-=======
 Apple now separates Reminders and Calendar permissions into _write-only_ and _full-access_ scopes. The Swift bridge declares the following privacy keys so Claude can both read and write data when you approve access:
->>>>>>> pr-55
 
 - `NSRemindersUsageDescription`
 - `NSRemindersFullAccessUsageDescription`
@@ -71,9 +63,7 @@ Apple now separates Reminders and Calendar permissions into _write-only_ and _fu
 
 When the CLI detects a `notDetermined` authorization status it calls `requestFullAccessToReminders` / `requestFullAccessToEvents`, which in turn triggers macOS to show the correct prompt. If the OS ever loses track of permissions, rerun `./check-permissions.sh` to re-open the dialogs.
 
-EventKit permissions are granted to the `EventKitCLI` binary (you will see that name in System Settings). AppleScript automation permission is granted to the host tool that runs the MCP server (for example, a terminal or an MCP client), because it is the automation sender.
-
-If a tool call still encounters a permission failure, the Node.js layer automatically runs a minimal AppleScript (`osascript -e 'tell application "Reminders" …'`) to surface the dialog and then retries the Swift CLI once. If that still fails, the error message includes a domain-specific `osascript` command; run it from the same app that launches the server (for example Terminal or Claude Desktop) to force the prompt.
+If a Claude tool call still encounters a permission failure, the Node.js layer automatically runs a minimal AppleScript (`osascript -e 'tell application "Reminders" …'`) to surface the dialog and then retries the Swift CLI once.
 
 **Verification command**
 
@@ -148,7 +138,6 @@ For Windows:
 ```bash
 code %APPDATA%\Claude\claude_desktop_config.json
 ```
-
 
 ### 2. Add Server Configuration
 
@@ -722,7 +711,7 @@ This ensures URLs are accessible both in the Reminders app UI and through the AP
 
 ```typescript
 // Extract URLs from notes using regex
-const urlsRegex = reminder.notes?.match(/https?:\[^\s]+/g) || [];
+const urlsRegex = reminder.notes?.match(/https?:\/\/[^\s]+/g) || [];
 ```
 
 **Benefits of Structured Format**:
