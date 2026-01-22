@@ -73,10 +73,10 @@ pnpm test -- src/swift/Info.plist.test.ts
 
 ## 快速开始
 
-通过 npm 全局安装：
+你可以直接使用 `npx` 运行服务器：
 
 ```bash
-npm install -g mcp-server-apple-events
+npx mcp-server-apple-events
 ```
 
 ## 配置说明

@@ -75,10 +75,10 @@ The test suite ensures all required usage-description strings are present before
 
 ## Quick Start
 
-Install globally via npm:
+You can run the server directly using `npx`:
 
 ```bash
-npm install -g mcp-server-apple-events
+npx mcp-server-apple-events
 ```
 
 ## Configuration
