@@ -561,21 +561,20 @@ CLI 入口内建项目根目录回退逻辑。即使从 `dist/` 等子目录或�
 ### 依赖
 
 **运行时依赖：**
-- `@modelcontextprotocol/sdk ^1.20.2` - MCP 协议实现
-- `moment ^2.30.1` - 日期/时间处理实用工具
+- `@modelcontextprotocol/sdk ^1.25.1` - MCP 协议实现
 - `exit-on-epipe ^1.0.1` - 优雅的进程终止处理
-- `tsx ^4.20.6` - TypeScript 执行和 REPL
-- `zod ^4.1.12` - 运行时类型验证
+- `tsx ^4.21.0` - TypeScript 执行和 REPL
+- `zod ^4.3.5` - 运行时类型验证
 
 **开发依赖：**
-- `typescript ^5.9.3` - TypeScript compiler
-- `@types/node ^24.9.2` - Node.js type definitions
-- `@types/jest ^30.0.0` - Jest type definitions
-- `jest ^30.2.0` - Testing framework
-- `babel-jest ^30.2.0` - Babel Jest transformer
-- `babel-plugin-transform-import-meta ^2.3.3` - Babel import meta transform
-- `ts-jest ^29.4.5` - Jest TypeScript support
-- `@biomejs/biome ^2.3.2` - Code formatting and linting
+- `typescript ^5.9.3` - TypeScript 编译器
+- `@types/node ^25.0.3` - Node.js 类型定义
+- `@types/jest ^30.0.0` - Jest 类型定义
+- `jest ^30.2.0` - 测试框架
+- `babel-jest ^30.2.0` - Babel Jest 转换器
+- `babel-plugin-transform-import-meta ^2.3.3` - Babel 导入元转换
+- `ts-jest ^29.4.6` - Jest TypeScript 支持
+- `@biomejs/biome ^2.3.11` - 代码格式化和静态检查
 
 **构建工具：**
 - Swift 二进制文件用于原生 macOS 集成

@@ -921,22 +921,21 @@ The CLI entry point includes a project-root fallback, so you can start the serve
 
 **Runtime Dependencies:**
 
-- `@modelcontextprotocol/sdk ^1.20.2` - MCP protocol implementation
-- `moment ^2.30.1` - Date/time handling utilities
+- `@modelcontextprotocol/sdk ^1.25.1` - MCP protocol implementation
 - `exit-on-epipe ^1.0.1` - Graceful process termination handling
-- `tsx ^4.20.6` - TypeScript execution and REPL
-- `zod ^4.1.12` - Runtime type validation
+- `tsx ^4.21.0` - TypeScript execution and REPL
+- `zod ^4.3.5` - Runtime type validation
 
 **Development Dependencies:**
 
 - `typescript ^5.9.3` - TypeScript compiler
-- `@types/node ^24.9.2` - Node.js type definitions
+- `@types/node ^25.0.3` - Node.js type definitions
 - `@types/jest ^30.0.0` - Jest type definitions
 - `jest ^30.2.0` - Testing framework
 - `babel-jest ^30.2.0` - Babel Jest transformer
 - `babel-plugin-transform-import-meta ^2.3.3` - Babel import meta transform
-- `ts-jest ^29.4.5` - Jest TypeScript support
-- `@biomejs/biome ^2.3.2` - Code formatting and linting
+- `ts-jest ^29.4.6` - Jest TypeScript support
+- `@biomejs/biome ^2.3.11` - Code formatting and linting
 
 **Build Tools:**
 
