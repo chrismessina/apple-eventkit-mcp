@@ -6,6 +6,7 @@
 import type { Reminder } from '../types/index.js';
 import { getTodayStart, getTomorrowStart, getWeekEnd } from './dateUtils.js';
 import { parseReminderDueDate } from './reminderDateParser.js';
+import { hasAllTags } from './tagUtils.js';
 
 /**
  * Date range filters for reminders
@@ -79,6 +80,21 @@ function filterRemindersByDate(
 }
 
 /**
+ * Priority filter values (string names that map to EventKit integers)
+ */
+export type PriorityFilter = 'high' | 'medium' | 'low' | 'none';
+
+/**
+ * Maps priority filter strings to EventKit integer values
+ */
+const PRIORITY_FILTER_MAP: Record<PriorityFilter, number> = {
+  none: 0,
+  high: 1,
+  medium: 5,
+  low: 9,
+};
+
+/**
  * Filters for reminder search operations
  */
 export interface ReminderFilters {
@@ -86,6 +102,11 @@ export interface ReminderFilters {
   search?: string;
   dueWithin?: DateFilter;
   list?: string;
+  priority?: PriorityFilter;
+  flagged?: boolean;
+  recurring?: boolean;
+  locationBased?: boolean;
+  tags?: string[];
 }
 
 /**
@@ -126,6 +147,42 @@ export function applyReminderFilters(
     filteredReminders = filterRemindersByDate(
       filteredReminders,
       filters.dueWithin,
+    );
+  }
+
+  // Filter by priority
+  if (filters.priority) {
+    const priorityValue = PRIORITY_FILTER_MAP[filters.priority];
+    filteredReminders = filteredReminders.filter(
+      (reminder) => reminder.priority === priorityValue,
+    );
+  }
+
+  // Filter by flagged status
+  if (filters.flagged !== undefined && filters.flagged) {
+    filteredReminders = filteredReminders.filter(
+      (reminder) => reminder.isFlagged === true,
+    );
+  }
+
+  // Filter by recurring status
+  if (filters.recurring !== undefined && filters.recurring) {
+    filteredReminders = filteredReminders.filter(
+      (reminder) => reminder.recurrence !== undefined,
+    );
+  }
+
+  // Filter by location-based status
+  if (filters.locationBased !== undefined && filters.locationBased) {
+    filteredReminders = filteredReminders.filter(
+      (reminder) => reminder.locationTrigger !== undefined,
+    );
+  }
+
+  // Filter by tags (must have ALL specified tags)
+  if (filters.tags && filters.tags.length > 0) {
+    filteredReminders = filteredReminders.filter((reminder) =>
+      hasAllTags(reminder.tags, filters.tags!),
     );
   }
 

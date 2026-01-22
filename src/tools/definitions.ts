@@ -78,6 +78,17 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
           type: 'boolean',
           description: 'The completion status of the reminder (for update).',
         },
+        priority: {
+          type: 'integer',
+          enum: [0, 1, 5, 9],
+          description:
+            'Priority level: 0=none, 1=high, 5=medium, 9=low (for create/update).',
+        },
+        flagged: {
+          type: 'boolean',
+          description:
+            'Whether the reminder is flagged (shows flag icon in Reminders app).',
+        },
         targetList: {
           type: 'string',
           description: 'The name of the list for create or update operations.',
@@ -100,6 +111,147 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
           type: 'string',
           enum: DUE_WITHIN_OPTIONS,
           description: 'Filter reminders by a due date range.',
+        },
+        filterPriority: {
+          type: 'string',
+          enum: ['high', 'medium', 'low', 'none'],
+          description: 'Filter reminders by priority level.',
+        },
+        filterFlagged: {
+          type: 'boolean',
+          description: 'Filter to only show flagged reminders when true.',
+        },
+        filterRecurring: {
+          type: 'boolean',
+          description: 'Filter to only show recurring reminders when true.',
+        },
+        // Recurrence properties for create/update
+        recurrence: {
+          type: 'object',
+          description:
+            'Recurrence rule for repeating reminders. Set to create/update recurring reminders.',
+          properties: {
+            frequency: {
+              type: 'string',
+              enum: ['daily', 'weekly', 'monthly', 'yearly'],
+              description: 'How often the reminder repeats.',
+            },
+            interval: {
+              type: 'integer',
+              description:
+                'Interval between occurrences (e.g., 2 for every 2 weeks). Defaults to 1.',
+              default: 1,
+            },
+            endDate: {
+              type: 'string',
+              description:
+                'When the recurrence ends (YYYY-MM-DD format). Optional.',
+            },
+            occurrenceCount: {
+              type: 'integer',
+              description:
+                'Number of times to repeat (e.g., 10 for repeat 10 times). Optional.',
+            },
+            daysOfWeek: {
+              type: 'array',
+              items: { type: 'integer' },
+              description:
+                'Days of week for weekly recurrence (1=Sunday, 7=Saturday). Optional.',
+            },
+            daysOfMonth: {
+              type: 'array',
+              items: { type: 'integer' },
+              description:
+                'Days of month for monthly recurrence (1-31). Optional.',
+            },
+            monthsOfYear: {
+              type: 'array',
+              items: { type: 'integer' },
+              description:
+                'Months for yearly recurrence (1-12). Optional.',
+            },
+          },
+          required: ['frequency'],
+        },
+        clearRecurrence: {
+          type: 'boolean',
+          description:
+            'Set to true to remove recurrence from an existing reminder (for update).',
+        },
+        filterLocationBased: {
+          type: 'boolean',
+          description: 'Filter to only show location-based reminders when true.',
+        },
+        // Location trigger properties for create/update
+        locationTrigger: {
+          type: 'object',
+          description:
+            'Location trigger for geofence-based reminders. Reminder will fire when entering or leaving the specified location.',
+          properties: {
+            title: {
+              type: 'string',
+              description: 'Location name/title (e.g., "Home", "Office", "Grocery Store").',
+            },
+            latitude: {
+              type: 'number',
+              description: 'Latitude coordinate of the location.',
+            },
+            longitude: {
+              type: 'number',
+              description: 'Longitude coordinate of the location.',
+            },
+            radius: {
+              type: 'number',
+              description:
+                'Geofence radius in meters (default 100). Determines how close you need to be to trigger.',
+              default: 100,
+            },
+            proximity: {
+              type: 'string',
+              enum: ['enter', 'leave'],
+              description:
+                'When to trigger: "enter" fires when arriving, "leave" fires when departing.',
+            },
+          },
+          required: ['title', 'latitude', 'longitude', 'proximity'],
+        },
+        clearLocationTrigger: {
+          type: 'boolean',
+          description:
+            'Set to true to remove location trigger from an existing reminder (for update).',
+        },
+        // Tag filtering
+        filterTags: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Filter reminders by tags (must have ALL specified tags). Example: ["work", "urgent"]',
+        },
+        // Tag properties for create/update
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Tags to set on the reminder (for create). Replaces any existing tags. Example: ["work", "urgent"]',
+        },
+        addTags: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Tags to add to the reminder (for update). Merges with existing tags. Example: ["followup"]',
+        },
+        removeTags: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Tags to remove from the reminder (for update). Example: ["urgent"]',
+        },
+        // Subtask properties for create
+        subtasks: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Initial subtasks to create with the reminder (for create action). Provide an array of subtask titles. Example: ["Buy milk", "Get eggs", "Pick up bread"]',
         },
       },
       required: ['action'],
@@ -256,6 +408,69 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
       dependentSchemas: {
         action: {
           oneOf: [{ properties: { action: { const: 'read' } } }],
+        },
+      },
+    },
+  },
+  {
+    name: 'reminders_subtasks',
+    description:
+      'Manages subtasks/checklists within reminders. Subtasks are stored in the notes field and visible in the native Reminders app. Use this to create checklist items for a reminder.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['read', 'create', 'update', 'delete', 'toggle', 'reorder'],
+          description:
+            'The operation to perform: read (list subtasks), create (add new), update (modify), delete (remove), toggle (flip completion), reorder (change order).',
+        },
+        reminderId: {
+          type: 'string',
+          description:
+            'The unique identifier of the parent reminder (REQUIRED for all operations).',
+        },
+        subtaskId: {
+          type: 'string',
+          description:
+            'The unique identifier of the subtask (REQUIRED for update, delete, toggle).',
+        },
+        title: {
+          type: 'string',
+          description:
+            'The title of the subtask (REQUIRED for create, optional for update).',
+        },
+        completed: {
+          type: 'boolean',
+          description: 'The completion status of the subtask (for update).',
+        },
+        order: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Array of subtask IDs in desired order (REQUIRED for reorder). Must include all subtask IDs.',
+        },
+      },
+      required: ['action', 'reminderId'],
+      dependentSchemas: {
+        action: {
+          oneOf: [
+            { properties: { action: { const: 'read' } } },
+            { properties: { action: { const: 'create' } }, required: ['title'] },
+            {
+              properties: { action: { const: 'update' } },
+              required: ['subtaskId'],
+            },
+            {
+              properties: { action: { const: 'delete' } },
+              required: ['subtaskId'],
+            },
+            {
+              properties: { action: { const: 'toggle' } },
+              required: ['subtaskId'],
+            },
+            { properties: { action: { const: 'reorder' } }, required: ['order'] },
+          ],
         },
       },
     },

@@ -7,16 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.3.0] - 2026-01-07
+## [1.3.0] - 2026-01-21
 
 ### Added
 
+- **Priority Support**: Set reminder priority levels (high/medium/low/none) via native EventKit API
+- **Recurring Reminders**: Support for daily, weekly, monthly, yearly recurrence with flexible rules
+- **Location Triggers**: Geofence-based reminders that trigger on arrival or departure
+- **Tags/Labels**: Cross-list categorization with `[#tag]` format stored in notes
+- **Subtasks/Checklists**: Checklist items with progress tracking stored in notes
+- **New Tool**: `reminders_subtasks` for managing checklist items within reminders
+- **Enhanced Filtering**: Filter by priority, recurring, location-based, and tags
+- **Visual Indicators**: 🔄 (recurring), 📍 (location), 🏷️ (tags), 📋 (subtasks) in output
 - Reminder link utilities for note management
 - Explicit timezone offset to `buildTimeFormat` prompt helper
 - `reminderDateParser` for safe timezone-aware date parsing
 
+### Changed
+
+- Enhanced `reminders_tasks` with new parameters: `priority`, `recurrence`, `locationTrigger`, `tags`, `subtasks`
+- Added new read filters: `filterPriority`, `filterRecurring`, `filterLocationBased`, `filterTags`
+- Added tag management options: `addTags`, `removeTags` for update action
+- Added recurrence/location clearing: `clearRecurrence`, `clearLocationTrigger`
+- Updated documentation with comprehensive usage examples for all new features
+
 ### Fixed
 
+- Documented EventKit limitation: `isFlagged` property not available in public API (always returns `false`)
 - Timeout management for permission prompt AppleScripts
 - Permission prompt race conditions and reliability issues
 - Proactive AppleScript trigger for permission prompts

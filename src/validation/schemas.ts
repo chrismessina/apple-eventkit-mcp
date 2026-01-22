@@ -121,6 +121,74 @@ const DueWithinEnum = z
   .enum(['today', 'tomorrow', 'this-week', 'overdue', 'no-date'])
   .optional();
 
+const PriorityFilterEnum = z
+  .enum(['high', 'medium', 'low', 'none'])
+  .optional();
+
+const PriorityValueSchema = z
+  .number()
+  .int()
+  .refine((val) => [0, 1, 5, 9].includes(val), {
+    message: 'Priority must be 0 (none), 1 (high), 5 (medium), or 9 (low)',
+  })
+  .optional();
+
+/**
+ * Recurrence rule schema for repeating reminders
+ */
+const RecurrenceRuleSchema = z
+  .object({
+    frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
+    interval: z.number().int().positive().default(1),
+    endDate: SafeDateSchema,
+    occurrenceCount: z.number().int().positive().optional(),
+    daysOfWeek: z
+      .array(z.number().int().min(1).max(7))
+      .optional()
+      .refine((arr: number[] | undefined) => !arr || arr.length <= 7, {
+        message: 'daysOfWeek cannot have more than 7 entries',
+      }),
+    daysOfMonth: z
+      .array(z.number().int().min(1).max(31))
+      .optional()
+      .refine((arr: number[] | undefined) => !arr || arr.length <= 31, {
+        message: 'daysOfMonth cannot have more than 31 entries',
+      }),
+    monthsOfYear: z
+      .array(z.number().int().min(1).max(12))
+      .optional()
+      .refine((arr: number[] | undefined) => !arr || arr.length <= 12, {
+        message: 'monthsOfYear cannot have more than 12 entries',
+      }),
+  })
+  .optional();
+
+/**
+ * Location trigger schema for geofence-based reminders
+ */
+const LocationTriggerSchema = z
+  .object({
+    title: createSafeTextSchema(1, VALIDATION.MAX_TITLE_LENGTH, 'Location title'),
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+    radius: z.number().positive().default(100),
+    proximity: z.enum(['enter', 'leave']),
+  })
+  .optional();
+
+/**
+ * Tag schema for reminder tags
+ */
+const TagSchema = z
+  .string()
+  .min(1)
+  .max(50)
+  .regex(/^[a-zA-Z0-9_-]+$/, {
+    message: 'Tags can only contain letters, numbers, underscores, and hyphens',
+  });
+
+const TagArraySchema = z.array(TagSchema).optional();
+
 /**
  * Common field combinations for reusability
  */
@@ -130,6 +198,11 @@ const BaseReminderFields = {
   note: SafeNoteSchema,
   url: SafeUrlSchema,
   targetList: SafeListNameSchema,
+  priority: PriorityValueSchema,
+  flagged: z.boolean().optional(),
+  recurrence: RecurrenceRuleSchema,
+  locationTrigger: LocationTriggerSchema,
+  tags: TagArraySchema,
 };
 
 export const SafeIdSchema = z.string().min(1, 'ID cannot be empty');
@@ -145,6 +218,11 @@ export const ReadRemindersSchema = z.object({
   showCompleted: z.boolean().optional().default(false),
   search: SafeSearchSchema,
   dueWithin: DueWithinEnum,
+  filterPriority: PriorityFilterEnum,
+  filterFlagged: z.boolean().optional(),
+  filterRecurring: z.boolean().optional(),
+  filterLocationBased: z.boolean().optional(),
+  filterTags: TagArraySchema,
 });
 
 export const UpdateReminderSchema = z.object({
@@ -155,6 +233,15 @@ export const UpdateReminderSchema = z.object({
   url: SafeUrlSchema,
   completed: z.boolean().optional(),
   targetList: SafeListNameSchema,
+  priority: PriorityValueSchema,
+  flagged: z.boolean().optional(),
+  recurrence: RecurrenceRuleSchema,
+  clearRecurrence: z.boolean().optional(),
+  locationTrigger: LocationTriggerSchema,
+  clearLocationTrigger: z.boolean().optional(),
+  tags: TagArraySchema,
+  addTags: TagArraySchema,
+  removeTags: TagArraySchema,
 });
 
 export const DeleteReminderSchema = z.object({
@@ -291,3 +378,52 @@ export const validateInput = <T>(schema: z.ZodSchema<T>, input: unknown): T => {
     throw new ValidationError('Input validation failed: Unknown error');
   }
 };
+
+/**
+ * Subtask-related schemas
+ */
+const SubtaskIdSchema = z
+  .string()
+  .min(1, 'Subtask ID is required')
+  .regex(/^[a-f0-9]+$/, 'Subtask ID must be a valid hex string');
+
+const SubtaskTitleSchema = createSafeTextSchema(
+  1,
+  VALIDATION.MAX_TITLE_LENGTH,
+  'Subtask title',
+);
+
+const SubtaskOrderSchema = z
+  .array(SubtaskIdSchema)
+  .min(1, 'Order array cannot be empty');
+
+export const ReadSubtasksSchema = z.object({
+  reminderId: SafeIdSchema,
+});
+
+export const CreateSubtaskSchema = z.object({
+  reminderId: SafeIdSchema,
+  title: SubtaskTitleSchema,
+});
+
+export const UpdateSubtaskSchema = z.object({
+  reminderId: SafeIdSchema,
+  subtaskId: SubtaskIdSchema,
+  title: SubtaskTitleSchema.optional(),
+  completed: z.boolean().optional(),
+});
+
+export const DeleteSubtaskSchema = z.object({
+  reminderId: SafeIdSchema,
+  subtaskId: SubtaskIdSchema,
+});
+
+export const ToggleSubtaskSchema = z.object({
+  reminderId: SafeIdSchema,
+  subtaskId: SubtaskIdSchema,
+});
+
+export const ReorderSubtasksSchema = z.object({
+  reminderId: SafeIdSchema,
+  order: SubtaskOrderSchema,
+});

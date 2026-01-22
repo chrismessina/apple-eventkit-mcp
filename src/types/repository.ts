@@ -4,6 +4,30 @@
  */
 
 /**
+ * Recurrence rule JSON interface matching EventKitCLI output
+ */
+export interface RecurrenceRuleJSON {
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  interval?: number; // Defaults to 1 if not provided
+  endDate?: string | null;
+  occurrenceCount?: number | null;
+  daysOfWeek?: number[] | null; // 1 = Sunday, 7 = Saturday
+  daysOfMonth?: number[] | null; // 1-31
+  monthsOfYear?: number[] | null; // 1-12
+}
+
+/**
+ * Location trigger JSON interface matching EventKitCLI output
+ */
+export interface LocationTriggerJSON {
+  title: string; // Location name/title
+  latitude: number;
+  longitude: number;
+  radius?: number; // Geofence radius in meters, defaults to 100
+  proximity: 'enter' | 'leave' | 'none';
+}
+
+/**
  * JSON interfaces matching the output from EventKitCLI
  */
 
@@ -15,6 +39,10 @@ export interface ReminderJSON {
   notes: string | null;
   url: string | null;
   dueDate: string | null;
+  priority: number;
+  isFlagged: boolean;
+  recurrence: RecurrenceRuleJSON | null;
+  locationTrigger: LocationTriggerJSON | null;
 }
 
 export interface ListJSON {
@@ -63,6 +91,10 @@ export interface CreateReminderData {
   notes?: string;
   url?: string;
   dueDate?: string;
+  priority?: number;
+  isFlagged?: boolean;
+  recurrence?: RecurrenceRuleJSON;
+  locationTrigger?: LocationTriggerJSON;
 }
 
 export interface UpdateReminderData {
@@ -73,6 +105,12 @@ export interface UpdateReminderData {
   url?: string;
   isCompleted?: boolean;
   dueDate?: string;
+  priority?: number;
+  isFlagged?: boolean;
+  recurrence?: RecurrenceRuleJSON;
+  clearRecurrence?: boolean;
+  locationTrigger?: LocationTriggerJSON;
+  clearLocationTrigger?: boolean;
 }
 
 export interface CreateEventData {

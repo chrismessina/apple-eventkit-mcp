@@ -1,0 +1,181 @@
+/**
+ * tagUtils.ts
+ * Utilities for handling tags stored in reminder notes using [#tag] format
+ *
+ * Tags are stored in the notes field with the format: [#tagname]
+ * Example: "[#work] [#urgent] This is the reminder note content"
+ */
+
+// Regex to match tags in [#tag] format
+const TAG_REGEX = /\[#([^\]]+)\]/g;
+
+/**
+ * Extracts tags from notes content
+ * @param notes - The notes string that may contain tags
+ * @returns Array of tag names (without # prefix)
+ */
+export function extractTags(notes: string | null | undefined): string[] {
+  if (!notes) return [];
+
+  const tags: string[] = [];
+  let match: RegExpExecArray | null;
+
+  while ((match = TAG_REGEX.exec(notes)) !== null) {
+    const tag = match[1].trim().toLowerCase();
+    if (tag && !tags.includes(tag)) {
+      tags.push(tag);
+    }
+  }
+
+  // Reset regex lastIndex for next use
+  TAG_REGEX.lastIndex = 0;
+
+  return tags;
+}
+
+/**
+ * Removes tag markers from notes, returning clean content
+ * @param notes - The notes string with potential tags
+ * @returns Notes content without tag markers
+ */
+export function stripTags(notes: string | null | undefined): string {
+  if (!notes) return '';
+
+  return notes
+    .replace(TAG_REGEX, '')
+    .replace(/^\s+/, '') // Trim leading whitespace
+    .replace(/\s+$/, '') // Trim trailing whitespace
+    .replace(/\n{3,}/g, '\n\n'); // Collapse multiple newlines
+}
+
+/**
+ * Formats tags into the [#tag] format for storage
+ * @param tags - Array of tag names (with or without # prefix)
+ * @returns Formatted tag string
+ */
+export function formatTags(tags: string[]): string {
+  if (!tags || tags.length === 0) return '';
+
+  return tags
+    .map((tag) => {
+      // Remove # prefix if present, normalize to lowercase
+      const cleanTag = tag.replace(/^#/, '').trim().toLowerCase();
+      return cleanTag ? `[#${cleanTag}]` : '';
+    })
+    .filter(Boolean)
+    .join(' ');
+}
+
+/**
+ * Combines tags with notes content
+ * @param tags - Array of tag names
+ * @param notes - Notes content (may already have tags)
+ * @returns Combined notes with tags prepended
+ */
+export function combineTagsAndNotes(
+  tags: string[] | undefined,
+  notes: string | undefined,
+): string {
+  const existingTags = extractTags(notes);
+  const cleanNotes = stripTags(notes);
+
+  // Merge existing tags with new tags (deduplicating)
+  const allTags = tags ? [...new Set([...tags, ...existingTags])] : existingTags;
+
+  const formattedTags = formatTags(allTags);
+
+  if (formattedTags && cleanNotes) {
+    return `${formattedTags}\n${cleanNotes}`;
+  } else if (formattedTags) {
+    return formattedTags;
+  } else {
+    return cleanNotes;
+  }
+}
+
+/**
+ * Adds tags to existing notes
+ * @param tagsToAdd - Tags to add
+ * @param notes - Existing notes content
+ * @returns Updated notes with added tags
+ */
+export function addTagsToNotes(
+  tagsToAdd: string[],
+  notes: string | undefined,
+): string {
+  const existingTags = extractTags(notes);
+  const cleanNotes = stripTags(notes);
+
+  // Normalize and deduplicate
+  const normalizedNewTags = tagsToAdd.map((t) =>
+    t.replace(/^#/, '').trim().toLowerCase(),
+  );
+  const allTags = [...new Set([...existingTags, ...normalizedNewTags])];
+
+  const formattedTags = formatTags(allTags);
+
+  if (formattedTags && cleanNotes) {
+    return `${formattedTags}\n${cleanNotes}`;
+  } else if (formattedTags) {
+    return formattedTags;
+  } else {
+    return cleanNotes;
+  }
+}
+
+/**
+ * Removes tags from existing notes
+ * @param tagsToRemove - Tags to remove
+ * @param notes - Existing notes content
+ * @returns Updated notes with specified tags removed
+ */
+export function removeTagsFromNotes(
+  tagsToRemove: string[],
+  notes: string | undefined,
+): string {
+  const existingTags = extractTags(notes);
+  const cleanNotes = stripTags(notes);
+
+  // Normalize tags to remove
+  const normalizedRemove = tagsToRemove.map((t) =>
+    t.replace(/^#/, '').trim().toLowerCase(),
+  );
+
+  // Filter out tags to remove
+  const remainingTags = existingTags.filter(
+    (tag) => !normalizedRemove.includes(tag),
+  );
+
+  const formattedTags = formatTags(remainingTags);
+
+  if (formattedTags && cleanNotes) {
+    return `${formattedTags}\n${cleanNotes}`;
+  } else if (formattedTags) {
+    return formattedTags;
+  } else {
+    return cleanNotes;
+  }
+}
+
+/**
+ * Checks if a reminder has all specified tags
+ * @param reminderTags - Tags the reminder has
+ * @param filterTags - Tags to check for
+ * @returns true if reminder has ALL filter tags
+ */
+export function hasAllTags(
+  reminderTags: string[] | undefined,
+  filterTags: string[],
+): boolean {
+  if (!filterTags || filterTags.length === 0) return true;
+  if (!reminderTags || reminderTags.length === 0) return false;
+
+  const normalizedReminderTags = reminderTags.map((t) => t.toLowerCase());
+  const normalizedFilterTags = filterTags.map((t) =>
+    t.replace(/^#/, '').toLowerCase(),
+  );
+
+  return normalizedFilterTags.every((tag) =>
+    normalizedReminderTags.includes(tag),
+  );
+}

@@ -4,6 +4,74 @@
  */
 
 /**
+ * Priority levels for reminders (native EventKit values)
+ * 0 = none, 1 = high, 5 = medium, 9 = low
+ */
+export type ReminderPriority = 0 | 1 | 5 | 9;
+
+/**
+ * Priority label mapping for display
+ */
+export const PRIORITY_LABELS: Record<number, string> = {
+  0: 'none',
+  1: 'high',
+  5: 'medium',
+  9: 'low',
+};
+
+/**
+ * Recurrence frequency types
+ */
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+/**
+ * Recurrence rule interface for repeating reminders
+ */
+export interface RecurrenceRule {
+  frequency: RecurrenceFrequency;
+  interval: number; // e.g., every 2 weeks
+  endDate?: string;
+  occurrenceCount?: number; // e.g., repeat 10 times
+  daysOfWeek?: number[]; // 1 = Sunday, 7 = Saturday
+  daysOfMonth?: number[]; // 1-31
+  monthsOfYear?: number[]; // 1-12
+}
+
+/**
+ * Location trigger proximity types
+ */
+export type LocationProximity = 'enter' | 'leave';
+
+/**
+ * Location trigger interface for geofence-based reminders
+ */
+export interface LocationTrigger {
+  title: string; // Location name/title
+  latitude: number;
+  longitude: number;
+  radius?: number; // Geofence radius in meters (default 100)
+  proximity: LocationProximity; // Trigger on arrival or departure
+}
+
+/**
+ * Subtask interface for checklist items within reminders
+ */
+export interface Subtask {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+}
+
+/**
+ * Subtask progress info
+ */
+export interface SubtaskProgress {
+  completed: number;
+  total: number;
+  percentage: number;
+}
+
+/**
  * Reminder item interface
  */
 export interface Reminder {
@@ -14,6 +82,13 @@ export interface Reminder {
   url?: string; // Native URL field (currently limited by EventKit API)
   list: string;
   isCompleted: boolean;
+  priority: number; // 0=none, 1=high, 5=medium, 9=low
+  isFlagged: boolean;
+  recurrence?: RecurrenceRule;
+  locationTrigger?: LocationTrigger;
+  tags?: string[]; // Extracted from notes using [#tag] format
+  subtasks?: Subtask[]; // Extracted from notes using ---SUBTASKS--- format
+  subtaskProgress?: SubtaskProgress; // Computed progress info
 }
 
 /**
@@ -120,6 +195,11 @@ export interface RemindersToolArgs extends BaseToolArgs {
   showCompleted?: boolean;
   search?: string;
   dueWithin?: DueWithinOption;
+  filterPriority?: 'high' | 'medium' | 'low' | 'none';
+  filterFlagged?: boolean;
+  filterRecurring?: boolean;
+  filterLocationBased?: boolean;
+  filterTags?: string[]; // Filter by tags (reminders must have ALL specified tags)
   // Single item parameters
   title?: string;
   newTitle?: string;
@@ -127,8 +207,45 @@ export interface RemindersToolArgs extends BaseToolArgs {
   note?: string;
   url?: string;
   completed?: boolean;
+  priority?: number; // 0=none, 1=high, 5=medium, 9=low
+  flagged?: boolean;
+  // Recurrence parameters
+  recurrence?: RecurrenceRule;
+  clearRecurrence?: boolean;
+  // Location trigger parameters
+  locationTrigger?: LocationTrigger;
+  clearLocationTrigger?: boolean;
+  // Tag parameters
+  tags?: string[]; // Tags to add to the reminder
+  addTags?: string[]; // Tags to add (for update)
+  removeTags?: string[]; // Tags to remove (for update)
+  // Subtask parameters
+  subtasks?: string[]; // Subtask titles (for create - creates initial subtasks)
   // Target list for create/update operations
   targetList?: string;
+}
+
+/**
+ * Subtask action type
+ */
+export type SubtaskAction =
+  | 'read'
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'toggle'
+  | 'reorder';
+
+/**
+ * Tool arguments for subtask operations
+ */
+export interface SubtasksToolArgs extends BaseToolArgs {
+  action: SubtaskAction;
+  reminderId: string; // Parent reminder ID (required)
+  subtaskId?: string; // Subtask ID (for update, delete, toggle)
+  title?: string; // Subtask title (for create, update)
+  completed?: boolean; // Completion status (for update)
+  order?: string[]; // Array of subtask IDs in desired order (for reorder)
 }
 
 export interface ListsToolArgs extends BaseToolArgs {

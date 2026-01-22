@@ -17,22 +17,61 @@ import { applyReminderFilters } from './dateFiltering.js';
 import {
   addOptionalArg,
   addOptionalBooleanArg,
+  addOptionalJsonArg,
+  addOptionalNumberArg,
   nullToUndefined,
 } from './helpers.js';
+import {
+  getSubtaskProgress,
+  parseSubtasks,
+} from './subtaskUtils.js';
+import { extractTags } from './tagUtils.js';
 
 class ReminderRepository {
   private mapReminder(reminder: ReminderJSON): Reminder {
+    // Convert null values to undefined for optional fields
+    // dueDate is passed through as-is from Swift CLI to avoid double timezone conversion
     const normalizedReminder = nullToUndefined(reminder, [
       'notes',
       'url',
       'dueDate',
     ]) as Reminder;
 
-    // Pass dueDate as-is from Swift CLI to avoid double timezone conversion
-    if (reminder.dueDate) {
-      normalizedReminder.dueDate = reminder.dueDate;
-    } else {
-      delete normalizedReminder.dueDate;
+    // Map recurrence from JSON (convert nulls to undefined, default interval to 1)
+    if (reminder.recurrence) {
+      normalizedReminder.recurrence = {
+        frequency: reminder.recurrence.frequency,
+        interval: reminder.recurrence.interval ?? 1,
+        endDate: reminder.recurrence.endDate ?? undefined,
+        occurrenceCount: reminder.recurrence.occurrenceCount ?? undefined,
+        daysOfWeek: reminder.recurrence.daysOfWeek ?? undefined,
+        daysOfMonth: reminder.recurrence.daysOfMonth ?? undefined,
+        monthsOfYear: reminder.recurrence.monthsOfYear ?? undefined,
+      };
+    }
+
+    // Map location trigger from JSON
+    if (reminder.locationTrigger) {
+      normalizedReminder.locationTrigger = {
+        title: reminder.locationTrigger.title,
+        latitude: reminder.locationTrigger.latitude,
+        longitude: reminder.locationTrigger.longitude,
+        radius: reminder.locationTrigger.radius,
+        proximity: reminder.locationTrigger.proximity === 'leave' ? 'leave' : 'enter',
+      };
+    }
+
+    // Extract tags from notes
+    const tags = extractTags(reminder.notes);
+    if (tags.length > 0) {
+      normalizedReminder.tags = tags;
+    }
+
+    // Extract subtasks from notes
+    const subtasks = parseSubtasks(reminder.notes);
+    if (subtasks.length > 0) {
+      normalizedReminder.subtasks = subtasks;
+      normalizedReminder.subtaskProgress = getSubtaskProgress(subtasks);
     }
 
     return normalizedReminder;
@@ -77,6 +116,9 @@ class ReminderRepository {
     addOptionalArg(args, '--note', data.notes);
     addOptionalArg(args, '--url', data.url);
     addOptionalArg(args, '--dueDate', data.dueDate);
+    addOptionalNumberArg(args, '--priority', data.priority);
+    addOptionalJsonArg(args, '--recurrence', data.recurrence);
+    addOptionalJsonArg(args, '--locationTrigger', data.locationTrigger);
 
     return executeCli<ReminderJSON>(args);
   }
@@ -89,6 +131,11 @@ class ReminderRepository {
     addOptionalArg(args, '--url', data.url);
     addOptionalArg(args, '--dueDate', data.dueDate);
     addOptionalBooleanArg(args, '--isCompleted', data.isCompleted);
+    addOptionalNumberArg(args, '--priority', data.priority);
+    addOptionalJsonArg(args, '--recurrence', data.recurrence);
+    addOptionalBooleanArg(args, '--clearRecurrence', data.clearRecurrence);
+    addOptionalJsonArg(args, '--locationTrigger', data.locationTrigger);
+    addOptionalBooleanArg(args, '--clearLocationTrigger', data.clearLocationTrigger);
 
     return executeCli<ReminderJSON>(args);
   }
