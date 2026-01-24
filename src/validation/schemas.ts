@@ -24,43 +24,49 @@ const URL_PATTERN =
 // Maximum lengths for security (imported from constants.ts)
 
 /**
- * Schema factory for required safe text validation
- * @param {number} minLength - Minimum character length
+ * Schema factory for safe text validation
+ * @param {number} minLength - Minimum character length (0 for optional)
  * @param {number} maxLength - Maximum character length
  * @param {string} [fieldName='Text'] - Field name for error messages
- * @returns {ZodString} Validated string schema with security patterns
+ * @param {boolean} [optional=false] - Whether the field is optional
+ * @returns {ZodString | ZodOptional<ZodString>} Validated string schema
  * @description
  * - Blocks control characters and dangerous Unicode
  * - Allows printable ASCII, extended Latin, CJK characters
  * - Enforces length limits for security
  */
-const createSafeTextSchema = (
+function createSafeTextSchema(
+  minLength: number,
+  maxLength: number,
+  fieldName?: string,
+  optional?: false,
+): z.ZodString;
+function createSafeTextSchema(
+  minLength: number,
+  maxLength: number,
+  fieldName: string,
+  optional: true,
+): z.ZodOptional<z.ZodString>;
+function createSafeTextSchema(
   minLength: number,
   maxLength: number,
   fieldName = 'Text',
-) =>
-  z
+  optional = false,
+): z.ZodString | z.ZodOptional<z.ZodString> {
+  let schema = z
     .string()
-    .min(minLength, `${fieldName} cannot be empty`)
     .max(maxLength, `${fieldName} cannot exceed ${maxLength} characters`)
     .regex(
       SAFE_TEXT_PATTERN,
       `${fieldName} contains invalid characters. Only alphanumeric, spaces, and basic punctuation allowed`,
     );
 
-/**
- * Schema factory for optional safe text validation
- * @param {number} maxLength - Maximum character length
- * @param {string} [fieldName='Text'] - Field name for error messages
- * @returns {ZodOptional<ZodString>} Optional validated string schema
- * @description Same security patterns as createSafeTextSchema but allows undefined values
- */
-const createOptionalSafeTextSchema = (maxLength: number, fieldName = 'Text') =>
-  z
-    .string()
-    .max(maxLength, `${fieldName} cannot exceed ${maxLength} characters`)
-    .regex(SAFE_TEXT_PATTERN, `${fieldName} contains invalid characters`)
-    .optional();
+  if (minLength > 0) {
+    schema = schema.min(minLength, `${fieldName} cannot be empty`);
+  }
+
+  return optional ? schema.optional() : schema;
+}
 
 /**
  * Base validation schemas using factory functions
@@ -69,22 +75,28 @@ export const SafeTextSchema = createSafeTextSchema(
   1,
   VALIDATION.MAX_TITLE_LENGTH,
 );
-export const SafeNoteSchema = createOptionalSafeTextSchema(
+export const SafeNoteSchema = createSafeTextSchema(
+  0,
   VALIDATION.MAX_NOTE_LENGTH,
   'Note',
+  true,
 );
-export const SafeListNameSchema = createOptionalSafeTextSchema(
+export const SafeListNameSchema = createSafeTextSchema(
+  0,
   VALIDATION.MAX_LIST_NAME_LENGTH,
   'List name',
+  true,
 );
 export const RequiredListNameSchema = createSafeTextSchema(
   1,
   VALIDATION.MAX_LIST_NAME_LENGTH,
   'List name',
 );
-export const SafeSearchSchema = createOptionalSafeTextSchema(
+export const SafeSearchSchema = createSafeTextSchema(
+  0,
   VALIDATION.MAX_SEARCH_LENGTH,
   'Search term',
+  true,
 );
 
 export const SafeDateSchema = z
@@ -121,9 +133,7 @@ const DueWithinEnum = z
   .enum(['today', 'tomorrow', 'this-week', 'overdue', 'no-date'])
   .optional();
 
-const PriorityFilterEnum = z
-  .enum(['high', 'medium', 'low', 'none'])
-  .optional();
+const PriorityFilterEnum = z.enum(['high', 'medium', 'low', 'none']).optional();
 
 const PriorityValueSchema = z
   .number()
@@ -168,7 +178,11 @@ const RecurrenceRuleSchema = z
  */
 const LocationTriggerSchema = z
   .object({
-    title: createSafeTextSchema(1, VALIDATION.MAX_TITLE_LENGTH, 'Location title'),
+    title: createSafeTextSchema(
+      1,
+      VALIDATION.MAX_TITLE_LENGTH,
+      'Location title',
+    ),
     latitude: z.number().min(-90).max(90),
     longitude: z.number().min(-180).max(180),
     radius: z.number().positive().default(100),
@@ -190,6 +204,17 @@ const TagSchema = z
 const TagArraySchema = z.array(TagSchema).optional();
 
 /**
+ * Subtask validation schemas
+ */
+const SubtaskTitleSchema = createSafeTextSchema(
+  1,
+  VALIDATION.MAX_TITLE_LENGTH,
+  'Subtask title',
+);
+
+const SubtaskTitleArraySchema = z.array(SubtaskTitleSchema).optional();
+
+/**
  * Common field combinations for reusability
  */
 const BaseReminderFields = {
@@ -203,6 +228,7 @@ const BaseReminderFields = {
   recurrence: RecurrenceRuleSchema,
   locationTrigger: LocationTriggerSchema,
   tags: TagArraySchema,
+  subtasks: SubtaskTitleArraySchema,
 };
 
 export const SafeIdSchema = z.string().min(1, 'ID cannot be empty');
@@ -254,9 +280,11 @@ export const CreateCalendarEventSchema = z.object({
   startDate: createRequiredDateSchema('Start date'),
   endDate: createRequiredDateSchema('End date'),
   note: SafeNoteSchema,
-  location: createOptionalSafeTextSchema(
+  location: createSafeTextSchema(
+    0,
     VALIDATION.MAX_LOCATION_LENGTH,
     'Location',
+    true,
   ),
   url: SafeUrlSchema,
   isAllDay: z.boolean().optional(),
@@ -277,9 +305,11 @@ export const UpdateCalendarEventSchema = z.object({
   startDate: SafeDateSchema,
   endDate: SafeDateSchema,
   note: SafeNoteSchema,
-  location: createOptionalSafeTextSchema(
+  location: createSafeTextSchema(
+    0,
     VALIDATION.MAX_LOCATION_LENGTH,
     'Location',
+    true,
   ),
   url: SafeUrlSchema,
   isAllDay: z.boolean().optional(),
@@ -386,12 +416,6 @@ const SubtaskIdSchema = z
   .string()
   .min(1, 'Subtask ID is required')
   .regex(/^[a-f0-9]+$/, 'Subtask ID must be a valid hex string');
-
-const SubtaskTitleSchema = createSafeTextSchema(
-  1,
-  VALIDATION.MAX_TITLE_LENGTH,
-  'Subtask title',
-);
 
 const SubtaskOrderSchema = z
   .array(SubtaskIdSchema)

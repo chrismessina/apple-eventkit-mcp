@@ -261,7 +261,13 @@ export function reorderSubtasks(
   }
 
   // Reorder
-  const reorderedSubtasks = order.map((id) => subtaskMap.get(id)!);
+  const reorderedSubtasks = order.map((id) => {
+    const subtask = subtaskMap.get(id);
+    if (!subtask) {
+      throw new Error(`Subtask with ID '${id}' not found.`);
+    }
+    return subtask;
+  });
 
   return combineSubtasksAndNotes(reorderedSubtasks, notes);
 }

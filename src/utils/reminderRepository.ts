@@ -21,11 +21,17 @@ import {
   addOptionalNumberArg,
   nullToUndefined,
 } from './helpers.js';
-import {
-  getSubtaskProgress,
-  parseSubtasks,
-} from './subtaskUtils.js';
+import { getSubtaskProgress, parseSubtasks } from './subtaskUtils.js';
 import { extractTags } from './tagUtils.js';
+
+const FLAGGED_UNSUPPORTED_MESSAGE =
+  'Flagged reminders are not supported by EventKit.';
+
+const assertFlaggedUnsupported = (isFlagged?: boolean): void => {
+  if (isFlagged !== undefined) {
+    throw new Error(FLAGGED_UNSUPPORTED_MESSAGE);
+  }
+};
 
 class ReminderRepository {
   private mapReminder(reminder: ReminderJSON): Reminder {
@@ -57,7 +63,8 @@ class ReminderRepository {
         latitude: reminder.locationTrigger.latitude,
         longitude: reminder.locationTrigger.longitude,
         radius: reminder.locationTrigger.radius,
-        proximity: reminder.locationTrigger.proximity === 'leave' ? 'leave' : 'enter',
+        proximity:
+          reminder.locationTrigger.proximity === 'leave' ? 'leave' : 'enter',
       };
     }
 
@@ -111,6 +118,7 @@ class ReminderRepository {
   }
 
   async createReminder(data: CreateReminderData): Promise<ReminderJSON> {
+    assertFlaggedUnsupported(data.isFlagged);
     const args = ['--action', 'create', '--title', data.title];
     addOptionalArg(args, '--targetList', data.list);
     addOptionalArg(args, '--note', data.notes);
@@ -124,6 +132,7 @@ class ReminderRepository {
   }
 
   async updateReminder(data: UpdateReminderData): Promise<ReminderJSON> {
+    assertFlaggedUnsupported(data.isFlagged);
     const args = ['--action', 'update', '--id', data.id];
     addOptionalArg(args, '--title', data.newTitle);
     addOptionalArg(args, '--targetList', data.list);
@@ -135,7 +144,11 @@ class ReminderRepository {
     addOptionalJsonArg(args, '--recurrence', data.recurrence);
     addOptionalBooleanArg(args, '--clearRecurrence', data.clearRecurrence);
     addOptionalJsonArg(args, '--locationTrigger', data.locationTrigger);
-    addOptionalBooleanArg(args, '--clearLocationTrigger', data.clearLocationTrigger);
+    addOptionalBooleanArg(
+      args,
+      '--clearLocationTrigger',
+      data.clearLocationTrigger,
+    );
 
     return executeCli<ReminderJSON>(args);
   }

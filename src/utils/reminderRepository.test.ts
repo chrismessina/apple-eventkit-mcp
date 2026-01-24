@@ -154,7 +154,14 @@ describe('ReminderRepository', () => {
       const mockLists: ReminderList[] = [];
       const filters: ReminderFilters = { showCompleted: false };
       const filteredReminders: Reminder[] = [
-        { id: '1', title: 'Test 1', isCompleted: false, list: 'Default', priority: 0, isFlagged: false },
+        {
+          id: '1',
+          title: 'Test 1',
+          isCompleted: false,
+          list: 'Default',
+          priority: 0,
+          isFlagged: false,
+        },
       ];
 
       mockExecuteCli.mockResolvedValue({
@@ -367,6 +374,18 @@ describe('ReminderRepository', () => {
       expect(args).not.toContain('--url');
       expect(args).not.toContain('--dueDate');
     });
+
+    it('should reject flagged reminders', async () => {
+      const data = {
+        title: 'Flagged Reminder',
+        isFlagged: true,
+      };
+
+      await expect(repository.createReminder(data)).rejects.toThrow(
+        'Flagged reminders are not supported by EventKit',
+      );
+      expect(mockExecuteCli).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateReminder', () => {
@@ -461,6 +480,18 @@ describe('ReminderRepository', () => {
 
       const args = mockExecuteCli.mock.calls[0][0];
       expect(args).not.toContain('--isCompleted');
+    });
+
+    it('should reject flagged updates', async () => {
+      const data = {
+        id: '123',
+        isFlagged: false,
+      };
+
+      await expect(repository.updateReminder(data)).rejects.toThrow(
+        'Flagged reminders are not supported by EventKit',
+      );
+      expect(mockExecuteCli).not.toHaveBeenCalled();
     });
   });
 
