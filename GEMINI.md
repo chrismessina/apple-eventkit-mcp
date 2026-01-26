@@ -36,12 +36,24 @@ The project follows a 4-layer Clean Architecture:
 *   **Lint & Format:** `pnpm lint` (Uses Biome)
 
 ## Available Tools
-The server exposes 4 main tools:
+The server exposes 5 main tools:
 
 1.  **`reminders_tasks`**: CRUD operations for individual reminders (create, read, update, delete). Supports filtering by list, due date, etc.
 2.  **`reminders_lists`**: Manage reminder lists (create, read, update, delete).
 3.  **`calendar_events`**: CRUD operations for calendar events. Supports time blocking and scheduling.
 4.  **`calendar_calendars`**: Read-only access to available calendars.
+5.  **`reminders_subtasks`**: Manages subtasks/checklists within reminders (create, read, update, delete, toggle, reorder).
+
+## Permission Handling
+The server implements a two-layer permission prompt strategy to ensure reliability in non-interactive environments:
+1.  **Proactive AppleScript Prompt**: On first access, an AppleScript command is triggered to force the permission dialog to appear.
+2.  **Swift Binary Check**: The binary checks authorization status via EventKit.
+3.  **Retry Strategy**: If a permission error occurs, the system attempts to recover using the AppleScript fallback.
+
+## Critical Constraints
+*   **macOS Only**: Strictly requires macOS with the EventKit framework.
+*   **Binary Security**: The Swift binary location is validated to prevent execution from unauthorized paths.
+*   **Date Formats**: Favors `YYYY-MM-DD HH:mm:ss` for local time and ISO 8601 for UTC.
 
 ## Development Guidelines
 
@@ -64,4 +76,5 @@ The server exposes 4 main tools:
 *   `src/server/server.ts`: Server configuration.
 *   `src/swift/EventKitCLI.swift`: Native Swift bridge implementation.
 *   `src/tools/definitions.ts`: MCP tool schema definitions.
+*   `src/tools/handlers/subtaskHandlers.ts`: Subtask business logic.
 *   `package.json`: Project configuration and scripts.
