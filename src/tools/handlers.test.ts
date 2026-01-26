@@ -303,6 +303,42 @@ describe('Tool Handlers', () => {
       expect(updateArgs.notes).not.toContain('Original note');
     });
 
+    it('preserves existing tags and subtasks when updating note only', async () => {
+      const existingNotes =
+        '[#work]\nOriginal note\n\n---SUBTASKS---\n[ ] {abc12345} First subtask\n---END SUBTASKS---';
+      const mockReminder: Reminder = {
+        id: 'rem-654',
+        title: 'Tagged Task',
+        isCompleted: false,
+        list: 'Inbox',
+        notes: existingNotes,
+        priority: 0,
+        isFlagged: false,
+      };
+      const mockReminderJSON = {
+        ...mockReminder,
+        url: null,
+        dueDate: null,
+        recurrence: null,
+        locationTrigger: null,
+        notes: existingNotes,
+      };
+      mockReminderRepository.findReminderById.mockResolvedValue(mockReminder);
+      mockReminderRepository.updateReminder.mockResolvedValue(mockReminderJSON);
+
+      await handleUpdateReminder({
+        action: 'update',
+        id: 'rem-654',
+        note: 'Updated note',
+      });
+
+      const updateArgs = mockReminderRepository.updateReminder.mock.calls[0][0];
+      expect(updateArgs.notes).toContain('[#work]');
+      expect(updateArgs.notes).toContain('Updated note');
+      expect(updateArgs.notes).toContain('---SUBTASKS---');
+      expect(updateArgs.notes).not.toContain('Original note');
+    });
+
     it('preserves existing notes and subtasks when replacing tags', async () => {
       const existingNotes =
         '[#old]\nKeep this note\n\n---SUBTASKS---\n[ ] {def67890} Another subtask\n---END SUBTASKS---';

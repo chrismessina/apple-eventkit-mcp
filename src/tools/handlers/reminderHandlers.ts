@@ -232,12 +232,13 @@ export const handleUpdateReminder = async (
     const validatedArgs = extractAndValidateArgs(args, UpdateReminderSchema);
 
     let notesToSend = validatedArgs.note;
-    const shouldUpdateTags =
+    const shouldRebuildNotes =
+      validatedArgs.note !== undefined ||
       Boolean(validatedArgs.tags) ||
       Boolean(validatedArgs.addTags) ||
       Boolean(validatedArgs.removeTags);
 
-    if (shouldUpdateTags) {
+    if (shouldRebuildNotes) {
       const currentReminder = await reminderRepository.findReminderById(
         validatedArgs.id,
       );
