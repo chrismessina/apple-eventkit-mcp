@@ -215,6 +215,17 @@ const SubtaskTitleSchema = createSafeTextSchema(
 const SubtaskTitleArraySchema = z.array(SubtaskTitleSchema).optional();
 
 /**
+ * Flagged field schema - EventKit does not support flagged status
+ * Accept for API compatibility but reject with clear error message
+ */
+const FlaggedSchema = z
+  .boolean()
+  .optional()
+  .refine((val) => val === undefined, {
+    message: 'Flagged reminders are not supported by EventKit.',
+  });
+
+/**
  * Common field combinations for reusability
  */
 const BaseReminderFields = {
@@ -224,7 +235,7 @@ const BaseReminderFields = {
   url: SafeUrlSchema,
   targetList: SafeListNameSchema,
   priority: PriorityValueSchema,
-  flagged: z.boolean().optional(),
+  flagged: FlaggedSchema,
   recurrence: RecurrenceRuleSchema,
   locationTrigger: LocationTriggerSchema,
   tags: TagArraySchema,
@@ -260,7 +271,7 @@ export const UpdateReminderSchema = z.object({
   completed: z.boolean().optional(),
   targetList: SafeListNameSchema,
   priority: PriorityValueSchema,
-  flagged: z.boolean().optional(),
+  flagged: FlaggedSchema,
   recurrence: RecurrenceRuleSchema,
   clearRecurrence: z.boolean().optional(),
   locationTrigger: LocationTriggerSchema,
