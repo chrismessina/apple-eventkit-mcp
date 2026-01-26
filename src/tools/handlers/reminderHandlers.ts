@@ -92,6 +92,10 @@ const formatRecurrence = (recurrence: RecurrenceRule): string => {
         parts.push(`in ${months}`);
       }
       break;
+    default: {
+      const exhaustiveCheck: never = recurrence.frequency;
+      throw new Error(`Unknown recurrence frequency: ${exhaustiveCheck}`);
+    }
   }
 
   if (recurrence.endDate) {
