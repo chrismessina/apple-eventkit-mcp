@@ -24,15 +24,6 @@ import {
 import { getSubtaskProgress, parseSubtasks } from './subtaskUtils.js';
 import { extractTags } from './tagUtils.js';
 
-const FLAGGED_UNSUPPORTED_MESSAGE =
-  'Flagged reminders are not supported by EventKit.';
-
-const assertFlaggedUnsupported = (isFlagged?: boolean): void => {
-  if (isFlagged !== undefined) {
-    throw new Error(FLAGGED_UNSUPPORTED_MESSAGE);
-  }
-};
-
 class ReminderRepository {
   private mapReminder(reminder: ReminderJSON): Reminder {
     // Convert null values to undefined for optional fields
@@ -118,7 +109,6 @@ class ReminderRepository {
   }
 
   async createReminder(data: CreateReminderData): Promise<ReminderJSON> {
-    assertFlaggedUnsupported(data.isFlagged);
     const args = ['--action', 'create', '--title', data.title];
     addOptionalArg(args, '--targetList', data.list);
     addOptionalArg(args, '--note', data.notes);
@@ -132,7 +122,6 @@ class ReminderRepository {
   }
 
   async updateReminder(data: UpdateReminderData): Promise<ReminderJSON> {
-    assertFlaggedUnsupported(data.isFlagged);
     const args = ['--action', 'update', '--id', data.id];
     addOptionalArg(args, '--title', data.newTitle);
     addOptionalArg(args, '--targetList', data.list);
