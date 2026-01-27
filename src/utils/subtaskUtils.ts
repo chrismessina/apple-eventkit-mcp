@@ -15,6 +15,7 @@
  */
 
 import { webcrypto } from 'node:crypto';
+import type { Subtask, SubtaskProgress } from '../types/index.js';
 
 // Subtask section markers
 const SUBTASK_START = '---SUBTASKS---';
@@ -25,15 +26,6 @@ const SUBTASK_SECTION_REGEX = /---SUBTASKS---\n([\s\S]*?)---END SUBTASKS---/;
 
 // Regex to match individual subtask lines: [ ] {id} title or [x] {id} title
 const SUBTASK_LINE_REGEX = /^\[([ x])\]\s*\{([a-f0-9]+)\}\s*(.+)$/;
-
-/**
- * Subtask interface
- */
-export interface Subtask {
-  id: string;
-  title: string;
-  isCompleted: boolean;
-}
 
 /**
  * Generates a short unique ID (8 hex characters)
@@ -292,11 +284,7 @@ export function createSubtasksFromTitles(titles: string[]): Subtask[] {
  * @param subtasks - Array of subtasks
  * @returns Progress object with completed count, total, and percentage
  */
-export function getSubtaskProgress(subtasks: Subtask[]): {
-  completed: number;
-  total: number;
-  percentage: number;
-} {
+export function getSubtaskProgress(subtasks: Subtask[]): SubtaskProgress {
   if (!subtasks || subtasks.length === 0) {
     return { completed: 0, total: 0, percentage: 100 };
   }

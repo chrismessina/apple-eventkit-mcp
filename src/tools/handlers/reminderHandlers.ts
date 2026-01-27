@@ -9,6 +9,7 @@ import {
   PRIORITY_LABELS,
   type RecurrenceRule,
   type RemindersToolArgs,
+  type Subtask,
 } from '../../types/index.js';
 import { handleAsyncOperation } from '../../utils/errorHandling.js';
 import { formatMultilineNotes } from '../../utils/helpers.js';
@@ -17,7 +18,6 @@ import {
   combineSubtasksAndNotes,
   createSubtasksFromTitles,
   parseSubtasks,
-  type Subtask,
   stripSubtasks,
 } from '../../utils/subtaskUtils.js';
 import {

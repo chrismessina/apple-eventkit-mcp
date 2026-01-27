@@ -89,12 +89,13 @@ class ReminderRepository {
   }
 
   async findReminderById(id: string): Promise<Reminder> {
-    const { reminders } = await this.readAll();
-    const reminder = this.mapReminders(reminders).find((r) => r.id === id);
-    if (!reminder) {
-      throw new Error(`Reminder with ID '${id}' not found.`);
-    }
-    return reminder;
+    const reminderJSON = await executeCli<ReminderJSON>([
+      '--action',
+      'read-by-id',
+      '--id',
+      id,
+    ]);
+    return this.mapReminder(reminderJSON);
   }
 
   async findReminders(filters: ReminderFilters = {}): Promise<Reminder[]> {

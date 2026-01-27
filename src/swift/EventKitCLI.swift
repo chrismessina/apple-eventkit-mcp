@@ -407,6 +407,13 @@ class RemindersManager {
     
     private func findReminder(withId id: String) -> EKReminder? { eventStore.calendarItem(withIdentifier: id) as? EKReminder }
 
+    func getReminderById(id: String) throws -> ReminderJSON {
+        guard let reminder = findReminder(withId: id) else {
+            throw NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "Reminder with ID '\(id)' not found."])
+        }
+        return reminder.toJSON()
+    }
+
     private func findList(named name: String?) throws -> EKCalendar {
         guard let listName = name, !listName.isEmpty else { return eventStore.defaultCalendarForNewReminders()! }
         guard let list = eventStore.calendars(for: .reminder).first(where: { $0.title == listName }) else {
@@ -997,6 +1004,10 @@ func main() {
             case "read":
                 let reminders = try manager.getReminders(showCompleted: parser.get("showCompleted") == "true", filterList: parser.get("filterList"), search: parser.get("search"), dueWithin: parser.get("dueWithin"))
                 print(String(data: try encoder.encode(StandardOutput(result: ReadResult(lists: manager.getLists(), reminders: reminders))), encoding: .utf8)!)
+            case "read-by-id":
+                guard let id = parser.get("id") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--id required."]) }
+                let reminder = try manager.getReminderById(id: id)
+                print(String(data: try encoder.encode(StandardOutput(result: reminder)), encoding: .utf8)!)
             case "read-lists":
                 print(String(data: try encoder.encode(StandardOutput(result: manager.getLists())), encoding: .utf8)!)
             case "create":

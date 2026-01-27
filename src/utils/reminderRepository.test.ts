@@ -27,24 +27,22 @@ describe('ReminderRepository', () => {
 
   describe('findReminderById', () => {
     it('should return reminder when found', async () => {
-      const mockReminders: Partial<Reminder>[] = [
-        { id: '1', title: 'Test 1', isCompleted: false, list: 'Default' },
-        { id: '2', title: 'Test 2', isCompleted: true, list: 'Work' },
-      ];
-      const mockLists: ReminderList[] = [];
+      const mockReminder: Partial<Reminder> = {
+        id: '2',
+        title: 'Test 2',
+        isCompleted: true,
+        list: 'Work',
+      };
 
-      mockExecuteCli.mockResolvedValue({
-        reminders: mockReminders,
-        lists: mockLists,
-      });
+      mockExecuteCli.mockResolvedValue(mockReminder);
 
       const result = await repository.findReminderById('2');
 
       expect(mockExecuteCli).toHaveBeenCalledWith([
         '--action',
-        'read',
-        '--showCompleted',
-        'true',
+        'read-by-id',
+        '--id',
+        '2',
       ]);
 
       expect(result).toEqual({
@@ -59,14 +57,9 @@ describe('ReminderRepository', () => {
     });
 
     it('should throw error when reminder not found', async () => {
-      const mockReminders: Partial<Reminder>[] = [
-        { id: '1', title: 'Test 1', isCompleted: false, list: 'Default' },
-      ];
-
-      mockExecuteCli.mockResolvedValue({
-        reminders: mockReminders,
-        lists: [],
-      });
+      mockExecuteCli.mockRejectedValue(
+        new Error("Reminder with ID '999' not found."),
+      );
 
       await expect(repository.findReminderById('999')).rejects.toThrow(
         "Reminder with ID '999' not found.",
@@ -74,22 +67,17 @@ describe('ReminderRepository', () => {
     });
 
     it('should handle reminders with notes and url', async () => {
-      const mockReminders: Partial<Reminder>[] = [
-        {
-          id: '1',
-          title: 'Test',
-          isCompleted: false,
-          list: 'Default',
-          notes: 'Some notes',
-          url: 'https://example.com',
-          dueDate: '2024-01-15',
-        },
-      ];
+      const mockReminder: Partial<Reminder> = {
+        id: '1',
+        title: 'Test',
+        isCompleted: false,
+        list: 'Default',
+        notes: 'Some notes',
+        url: 'https://example.com',
+        dueDate: '2024-01-15',
+      };
 
-      mockExecuteCli.mockResolvedValue({
-        reminders: mockReminders,
-        lists: [],
-      });
+      mockExecuteCli.mockResolvedValue(mockReminder);
 
       const result = await repository.findReminderById('1');
 
@@ -99,22 +87,17 @@ describe('ReminderRepository', () => {
     });
 
     it('should handle null notes and url as undefined', async () => {
-      const mockReminders: Partial<Reminder>[] = [
-        {
-          id: '1',
-          title: 'Test',
-          isCompleted: false,
-          list: 'Default',
-          notes: undefined,
-          url: undefined,
-          dueDate: undefined,
-        },
-      ];
+      const mockReminder: Partial<Reminder> = {
+        id: '1',
+        title: 'Test',
+        isCompleted: false,
+        list: 'Default',
+        notes: undefined,
+        url: undefined,
+        dueDate: undefined,
+      };
 
-      mockExecuteCli.mockResolvedValue({
-        reminders: mockReminders,
-        lists: [],
-      });
+      mockExecuteCli.mockResolvedValue(mockReminder);
 
       const result = await repository.findReminderById('1');
 
@@ -124,20 +107,15 @@ describe('ReminderRepository', () => {
     });
 
     it('should pass through due dates from Swift CLI without normalization', async () => {
-      const mockReminders: Partial<Reminder>[] = [
-        {
-          id: 'ad-1',
-          title: 'AdSense Fix',
-          isCompleted: false,
-          list: 'Work',
-          dueDate: '2025-11-15T08:30:00Z',
-        },
-      ];
+      const mockReminder: Partial<Reminder> = {
+        id: 'ad-1',
+        title: 'AdSense Fix',
+        isCompleted: false,
+        list: 'Work',
+        dueDate: '2025-11-15T08:30:00Z',
+      };
 
-      mockExecuteCli.mockResolvedValue({
-        reminders: mockReminders,
-        lists: [],
-      });
+      mockExecuteCli.mockResolvedValue(mockReminder);
 
       const result = await repository.findReminderById('ad-1');
 

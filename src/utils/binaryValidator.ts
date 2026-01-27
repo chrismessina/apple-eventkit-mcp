@@ -63,7 +63,34 @@ export function validateBinaryPath(
     );
   }
 
-  if (!fullConfig.allowedPaths.some((p) => normalizedPath.includes(p))) {
+  // Check if path is in allowed directories
+  // Use path segment matching for better security than simple substring matching
+  const isInAllowedPath = fullConfig.allowedPaths.some((allowedPath) => {
+    // Normalize the allowed path
+    const normalizedAllowedPath = path.normalize(allowedPath);
+
+    // Split paths into segments and check if allowed segments appear in order
+    const pathSegments = normalizedPath.split(path.sep).filter(Boolean);
+    const allowedSegments = normalizedAllowedPath
+      .split(path.sep)
+      .filter(Boolean);
+
+    // Check if allowedSegments appear consecutively in pathSegments
+    for (let i = 0; i <= pathSegments.length - allowedSegments.length; i++) {
+      let match = true;
+      for (let j = 0; j < allowedSegments.length; j++) {
+        if (pathSegments[i + j] !== allowedSegments[j]) {
+          match = false;
+          break;
+        }
+      }
+      if (match) return true;
+    }
+
+    return false;
+  });
+
+  if (!isInAllowedPath) {
     throw new BinaryValidationError(
       'Binary path not in allowed directories',
       'FORBIDDEN_PATH',
