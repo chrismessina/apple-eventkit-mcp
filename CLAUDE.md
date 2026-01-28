@@ -22,6 +22,9 @@ pnpm test -- --testNamePattern="pattern"
 
 # Lint and format with Biome
 pnpm lint
+
+# Combined lint + typecheck
+pnpm check
 ```
 
 ## Architecture
@@ -136,8 +139,9 @@ Tools support both underscore and dot notation:
 
 - Tests use Jest with ts-jest ESM preset
 - Mock the CLI executor in `src/utils/__mocks__/cliExecutor.ts`
-- Coverage threshold: 96% statements, 90% branches
+- Coverage thresholds: 96% statements, 90% branches, 98% functions, 96% lines
 - Swift binary tests in `src/swift/Info.plist.test.ts` validate permission keys
+- `src/utils/projectUtils.ts` is excluded from coverage (import.meta.url incompatible with Jest)
 
 ### Notes Field Conventions
 
@@ -162,3 +166,4 @@ When modifying notes programmatically, preserve existing tags and subtasks unles
 - **Permission handling**: Swift layer manages `EKEventStore.authorizationStatus()`
 - **Binary security**: Path validation in `binaryValidator.ts` restricts allowed binary locations
 - **Date formats**: Prefer `YYYY-MM-DD HH:mm:ss` for local time, ISO 8601 with timezone for UTC
+- **Flagged parameter**: The `flagged` parameter is accepted for API compatibility but has no effect—EventKit does not expose a public `isFlagged` property
