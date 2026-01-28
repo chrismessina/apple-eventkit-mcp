@@ -12,9 +12,15 @@ import { findProjectRoot } from './utils/projectUtils.js';
 
 // Find project root and load package.json
 const projectRoot = findProjectRoot();
-const packageJson = JSON.parse(
-  readFileSync(join(projectRoot, 'package.json'), 'utf-8'),
-);
+let packageJson: { name: string; version: string };
+try {
+  packageJson = JSON.parse(
+    readFileSync(join(projectRoot, 'package.json'), 'utf-8'),
+  );
+} catch (error) {
+  const detail = error instanceof Error ? error.message : String(error);
+  throw new Error(`Failed to parse package.json: ${detail}`);
+}
 
 // Server configuration
 const SERVER_CONFIG = {

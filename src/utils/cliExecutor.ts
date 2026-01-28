@@ -166,8 +166,11 @@ const parseCliOutput = <T>(output: string): T => {
   let parsed: CliResponse<T>;
   try {
     parsed = JSON.parse(output) as CliResponse<T>;
-  } catch (_error) {
-    throw new Error('EventKitCLI execution failed: Invalid CLI output');
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `EventKitCLI execution failed: Invalid CLI output - ${detail}`,
+    );
   }
 
   if (parsed.status === 'success') {

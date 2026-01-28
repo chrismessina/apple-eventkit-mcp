@@ -72,6 +72,8 @@ function isCorrectProjectRoot(dir: string): boolean {
     const packageData = JSON.parse(packageContent);
     return packageData.name === 'mcp-server-apple-events';
   } catch {
+    // Silently return false for any read/parse errors during project root discovery
+    // This allows the search to continue up the directory tree
     return false;
   }
 }
