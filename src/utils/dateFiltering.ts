@@ -62,16 +62,25 @@ function filterRemindersByDate(
 
     switch (filter) {
       case 'overdue':
-        return dueDate < today;
+        return dueDate.getTime() < today.getTime();
 
       case 'today':
-        return dueDate >= today && dueDate < tomorrow;
+        return (
+          dueDate.getTime() >= today.getTime() &&
+          dueDate.getTime() < tomorrow.getTime()
+        );
 
       case 'tomorrow':
-        return dueDate >= tomorrow && dueDate < dayAfterTomorrow;
+        return (
+          dueDate.getTime() >= tomorrow.getTime() &&
+          dueDate.getTime() < dayAfterTomorrow.getTime()
+        );
 
       case 'this-week':
-        return dueDate >= today && dueDate <= weekEnd;
+        return (
+          dueDate.getTime() >= today.getTime() &&
+          dueDate.getTime() <= weekEnd.getTime()
+        );
 
       default:
         return true;
