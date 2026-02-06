@@ -7,6 +7,17 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { ValidationError } from '../validation/schemas.js';
 
 /**
+ * Custom error class for user-facing CLI failures (e.g., not found, invalid input).
+ * Defined here to avoid circular/heavy imports from cliExecutor.
+ */
+export class CliUserError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CliUserError';
+  }
+}
+
+/**
  * Creates a descriptive error message, showing validation details in dev mode.
  */
 function createErrorMessage(operation: string, error: unknown): string {
@@ -14,8 +25,8 @@ function createErrorMessage(operation: string, error: unknown): string {
     error instanceof Error ? error.message : 'System error occurred';
   const isDev = process.env.NODE_ENV === 'development' || process.env.DEBUG;
 
-  // For validation errors, always return the detailed message.
-  if (error instanceof ValidationError) {
+  // For validation and CLI user errors, always return the detailed message.
+  if (error instanceof ValidationError || error instanceof CliUserError) {
     return message;
   }
 

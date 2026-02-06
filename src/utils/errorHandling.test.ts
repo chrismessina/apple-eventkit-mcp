@@ -4,7 +4,7 @@
  */
 
 import { ValidationError } from '../validation/schemas.js';
-import { handleAsyncOperation } from './errorHandling.js';
+import { CliUserError, handleAsyncOperation } from './errorHandling.js';
 
 describe('ErrorHandling', () => {
   const originalEnv = process.env.NODE_ENV;
@@ -61,6 +61,42 @@ describe('ErrorHandling', () => {
       expect((result.content[0] as { type: 'text'; text: string }).text).toBe(
         'Validation failed',
       );
+    });
+
+    it('should handle CliUserError specially and return detailed message', async () => {
+      const cliError = new CliUserError(
+        "Account 'foobar' not found. Available accounts: iCloud, Google",
+      );
+
+      const mockOperation = jest.fn().mockRejectedValue(cliError);
+
+      const result = await handleAsyncOperation(mockOperation, 'read events');
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0]).toHaveProperty('type', 'text');
+      expect((result.content[0] as { type: 'text'; text: string }).text).toBe(
+        "Account 'foobar' not found. Available accounts: iCloud, Google",
+      );
+    });
+
+    it('should return CliUserError message even in production mode', async () => {
+      const originalNodeEnv = process.env.NODE_ENV;
+      const originalDebug = process.env.DEBUG;
+      delete process.env.DEBUG;
+      process.env.NODE_ENV = 'production';
+
+      const cliError = new CliUserError('Calendar not found');
+      const mockOperation = jest.fn().mockRejectedValue(cliError);
+
+      const result = await handleAsyncOperation(mockOperation, 'read events');
+
+      expect(result.isError).toBe(true);
+      expect((result.content[0] as { type: 'text'; text: string }).text).toBe(
+        'Calendar not found',
+      );
+
+      process.env.NODE_ENV = originalNodeEnv;
+      if (originalDebug) process.env.DEBUG = originalDebug;
     });
 
     it.each([

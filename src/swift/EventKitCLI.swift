@@ -878,6 +878,11 @@ class RemindersManager {
     func getEvents(startDate: Date?, endDate: Date?, calendarName: String?, search: String?, availability: String?, accountName: String?) throws -> [EventJSON] {
         var calendars = calendarName != nil ? [try findCalendar(named: calendarName)] : eventStore.calendars(for: .event)
         if let account = accountName {
+            let accountExists = eventStore.sources.contains { $0.title == account }
+            if !accountExists {
+                let available = eventStore.sources.map { $0.title }.joined(separator: ", ")
+                throw NSError(domain: "EventKitCLI", code: 1, userInfo: [NSLocalizedDescriptionKey: "Account '\(account)' not found. Available accounts: \(available)"])
+            }
             calendars = calendars.filter { $0.source.title == account }
         }
         let predicate = eventStore.predicateForEvents(withStart: startDate ?? Date.distantPast, end: endDate ?? Date.distantFuture, calendars: calendars)

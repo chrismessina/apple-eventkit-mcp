@@ -128,7 +128,7 @@ describe('cliExecutor', () => {
       );
     });
 
-    it('throws CLI error message from parsed stdout', async () => {
+    it('throws CliUserError for non-permission CLI errors', async () => {
       const mockStdout = JSON.stringify({
         status: 'error',
         message: 'Failed to read reminder',
@@ -148,6 +148,13 @@ describe('cliExecutor', () => {
       await expect(
         executeCli(['--action', 'read', '--id', '123']),
       ).rejects.toThrow('Failed to read reminder');
+
+      try {
+        await executeCli(['--action', 'read', '--id', '123']);
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).name).toBe('CliUserError');
+      }
     });
 
     it('throws error when binary path validation fails', async () => {
