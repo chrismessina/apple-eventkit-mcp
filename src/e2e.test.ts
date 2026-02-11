@@ -26,11 +26,6 @@ async function createClient(): Promise<Client> {
       name: 'e2e-test-client',
       version: '1.0.0',
     },
-    {
-      capabilities: {
-        tools: {},
-      },
-    },
   );
 
   await client.connect(transport);
@@ -59,16 +54,16 @@ describe('MCP Server E2E Tests', () => {
       const serverInfo = client.getServerVersion();
 
       expect(serverInfo).toBeDefined();
-      expect(serverInfo.name).toBe('mcp-server-apple-events');
-      expect(serverInfo.version).toBeDefined();
+      expect(serverInfo?.name).toBe('mcp-server-apple-events');
+      expect(serverInfo?.version).toBeDefined();
     });
 
     it('should return server capabilities', async () => {
       const capabilities = client.getServerCapabilities();
 
       expect(capabilities).toBeDefined();
-      expect(capabilities.tools).toBeDefined();
-      expect(capabilities.prompts).toBeDefined();
+      expect(capabilities?.tools).toBeDefined();
+      expect(capabilities?.prompts).toBeDefined();
     });
   });
 
@@ -196,7 +191,7 @@ describe('MCP Server E2E Tests', () => {
 
       const schema = reminderTool?.inputSchema;
       expect(schema?.properties?.title).toBeDefined();
-      expect(schema?.dependentSchemas?.action).toBeDefined();
+      expect((schema as Record<string, unknown>)?.dependentSchemas).toBeDefined();
     });
   });
 });

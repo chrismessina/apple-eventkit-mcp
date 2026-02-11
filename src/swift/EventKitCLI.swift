@@ -844,6 +844,19 @@ class RemindersManager {
     func createList(title: String) throws -> ListJSON {
         let list = EKCalendar(for: .reminder, eventStore: eventStore)
         list.title = title
+
+        // Set calendar source to avoid "Calendar has no source" error
+        // Try in order: default reminders calendar source, calDAV source, or local source
+        if let defaultReminderCalendar = eventStore.defaultCalendarForNewReminders() {
+            list.source = defaultReminderCalendar.source
+        } else if let caldavSource = eventStore.sources.first(where: { $0.sourceType == .calDAV }) {
+            list.source = caldavSource
+        } else if let localSource = eventStore.sources.first(where: { $0.sourceType == .local }) {
+            list.source = localSource
+        } else {
+            throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "No calendar source available. Please ensure at least one reminders source exists."])
+        }
+
         try eventStore.saveCalendar(list, commit: true)
         return list.toJSON()
     }
