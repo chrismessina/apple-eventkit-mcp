@@ -113,7 +113,7 @@ describe('Tool Handlers', () => {
       expect(content).toContain('Notes: Line 1\n    Line 2');
     });
 
-    it('displays all priority levels (0, 1, 5, 9) with label and value in read output', async () => {
+    it('displays all priority levels (0, 1, 2, 3) with label and value in read output', async () => {
       const mockReminders = [
         {
           id: 'a',
@@ -131,17 +131,17 @@ describe('Tool Handlers', () => {
         },
         {
           id: 'c',
-          title: 'P5',
+          title: 'P2',
           isCompleted: false,
           list: 'L',
-          priority: 5,
+          priority: 2,
         },
         {
           id: 'd',
-          title: 'P9',
+          title: 'P3',
           isCompleted: false,
           list: 'L',
-          priority: 9,
+          priority: 3,
         },
       ];
       mockReminderRepository.findReminders.mockResolvedValue(mockReminders);
@@ -151,8 +151,8 @@ describe('Tool Handlers', () => {
 
       expect(content).toContain('Priority: none (0)');
       expect(content).toContain('Priority: high (1)');
-      expect(content).toContain('Priority: medium (5)');
-      expect(content).toContain('Priority: low (9)');
+      expect(content).toContain('Priority: medium (2)');
+      expect(content).toContain('Priority: low (3)');
     });
 
     it('renders single reminder details including metadata and completion state', async () => {

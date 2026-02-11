@@ -5,9 +5,9 @@
 
 /**
  * Priority levels for reminders (native EventKit values)
- * 0 = none, 1 = high, 5 = medium, 9 = low
+ * 0 = none, 1 = high, 2 = medium, 3 = low
  */
-export type ReminderPriority = 0 | 1 | 5 | 9;
+export type ReminderPriority = 0 | 1 | 2 | 3;
 
 /**
  * Priority label mapping for display
@@ -15,8 +15,8 @@ export type ReminderPriority = 0 | 1 | 5 | 9;
 export const PRIORITY_LABELS: Record<number, string> = {
   0: 'none',
   1: 'high',
-  5: 'medium',
-  9: 'low',
+  2: 'medium',
+  3: 'low',
 };
 
 /**
@@ -111,7 +111,7 @@ export interface Reminder {
   externalId?: string;
   list: string;
   isCompleted: boolean;
-  priority: number; // 0=none, 1=high, 5=medium, 9=low
+  priority: number; // 0=none, 1=high, 2=medium, 3=low
   alarms?: Alarm[];
   recurrenceRules?: RecurrenceRule[];
   locationTrigger?: LocationTrigger;
@@ -265,7 +265,7 @@ export interface RemindersToolArgs extends BaseToolArgs {
   location?: string;
   completed?: boolean;
   completionDate?: string;
-  priority?: number; // 0=none, 1=high, 5=medium, 9=low
+  priority?: number; // 0=none, 1=high, 2=medium, 3=low
   alarms?: Alarm[];
   clearAlarms?: boolean;
   // Recurrence parameters

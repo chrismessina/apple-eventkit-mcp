@@ -95,9 +95,9 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
         },
         priority: {
           type: 'integer',
-          enum: [0, 1, 5, 9],
+          enum: [0, 1, 2, 3],
           description:
-            'Priority level: 0=none, 1=high, 5=medium, 9=low (for create/update).',
+            'Priority level: 0=none, 1=high, 2=medium, 3=low (for create/update).',
         },
         alarms: {
           type: 'array',

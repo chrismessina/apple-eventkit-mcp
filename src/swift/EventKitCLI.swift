@@ -627,9 +627,9 @@ class RemindersManager {
             reminder.location = location.isEmpty ? nil : location
         }
 
-        // Set priority (0=none, 1=high, 5=medium, 9=low)
+        // Set priority (0=none, 1=high, 2=medium, 3=low)
         if let p = priority {
-            reminder.priority = max(0, min(9, p))
+            reminder.priority = max(0, min(3, p))
         }
 
         // Set recurrence rules
@@ -750,9 +750,9 @@ class RemindersManager {
 
         if let isCompleted = isCompleted { reminder.isCompleted = isCompleted }
 
-        // Update priority (0=none, 1=high, 5=medium, 9=low)
+        // Update priority (0=none, 1=high, 2=medium, 3=low)
         if let p = priority {
-            reminder.priority = max(0, min(9, p))
+            reminder.priority = max(0, min(3, p))
         }
 
         // Update recurrence rules
