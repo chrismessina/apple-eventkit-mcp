@@ -18,6 +18,17 @@ import {
   formatListMarkdown,
   formatSuccessMessage,
 } from './shared.js';
+import { formatListDisplay } from '../../utils/applescriptList.js';
+
+/**
+ * Formats a reminder list for display
+ * @param list - The reminder list to format
+ * @returns Array of markdown strings
+ */
+const formatReminderList = (list: { title: string; id: string; emblem?: string; color?: string }): string[] => {
+  const display = formatListDisplay(list.title, list.emblem, list.color);
+  return [`- ${display} (ID: ${list.id})`];
+};
 
 export const handleReadReminderLists = async (): Promise<CallToolResult> => {
   return handleAsyncOperation(async () => {
@@ -25,7 +36,7 @@ export const handleReadReminderLists = async (): Promise<CallToolResult> => {
     return formatListMarkdown(
       'Reminder Lists',
       lists,
-      (list) => [`- ${list.title} (ID: ${list.id})`],
+      formatReminderList,
       'No reminder lists found.',
     );
   }, 'read reminder lists');
@@ -41,6 +52,8 @@ export const handleCreateReminderList = async (
     );
     const list = await reminderRepository.createReminderList(
       validatedArgs.name,
+      validatedArgs.color,
+      validatedArgs.emblem,
     );
     return formatSuccessMessage('created', 'list', list.title, list.id);
   }, 'create reminder list');
@@ -57,6 +70,8 @@ export const handleUpdateReminderList = async (
     const list = await reminderRepository.updateReminderList(
       validatedArgs.name,
       validatedArgs.newName,
+      validatedArgs.color,
+      validatedArgs.emblem,
     );
     return formatSuccessMessage('updated', 'list', list.title, list.id);
   }, 'update reminder list');

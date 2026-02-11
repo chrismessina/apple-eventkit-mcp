@@ -403,6 +403,16 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
           type: 'string',
           description: 'The new name for the list (for update).',
         },
+        color: {
+          type: 'string',
+          description:
+            'The hex color code for the list (for create/update). Example: "#FF5733".',
+        },
+        emblem: {
+          type: 'string',
+          description:
+            'An emoji to use as the list icon/emblem (for create/update). Example: "🛒". Limited to 1-4 characters.',
+        },
       },
       required: ['action'],
       dependentSchemas: {
@@ -410,10 +420,7 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
           oneOf: [
             { properties: { action: { const: 'read' } } },
             { properties: { action: { const: 'create' } }, required: ['name'] },
-            {
-              properties: { action: { const: 'update' } },
-              required: ['name', 'newName'],
-            },
+            { properties: { action: { const: 'update' } }, required: ['name'] },
             { properties: { action: { const: 'delete' } }, required: ['name'] },
           ],
         },

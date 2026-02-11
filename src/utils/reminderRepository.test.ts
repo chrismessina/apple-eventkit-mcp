@@ -538,7 +538,7 @@ describe('ReminderRepository', () => {
         '--name',
         'New List',
       ]);
-      expect(result).toBe(mockResult);
+      expect(result).toEqual(mockResult);
     });
 
     it('should create list with special characters', async () => {
@@ -554,7 +554,7 @@ describe('ReminderRepository', () => {
         '--name',
         'Shopping List! @#$',
       ]);
-      expect(result).toBe(mockResult);
+      expect(result).toEqual(mockResult);
     });
 
     it('should propagate CLI errors', async () => {
@@ -587,7 +587,7 @@ describe('ReminderRepository', () => {
         '--newName',
         'New Name',
       ]);
-      expect(result).toBe(mockResult);
+      expect(result).toEqual(mockResult);
     });
   });
 

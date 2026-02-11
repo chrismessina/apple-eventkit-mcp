@@ -25,6 +25,7 @@ import {
 } from './helpers.js';
 import { getSubtaskProgress, parseSubtasks } from './subtaskUtils.js';
 import { extractTags } from './tagUtils.js';
+import { getListEmblems, setListEmblem } from './applescriptList.js';
 
 class ReminderRepository {
   private mapReminder(reminder: ReminderJSON): Reminder {
@@ -140,7 +141,30 @@ class ReminderRepository {
 
   async findAllLists(): Promise<ReminderList[]> {
     const { lists } = await this.readAll();
-    return lists;
+
+    // Get emblems for all lists in parallel
+    const listTitles = lists.map((l) => l.title);
+    const emblems = await getListEmblems(listTitles);
+
+    return lists.map((list) => {
+      const result: ReminderList = {
+        id: list.id,
+        title: list.title,
+      };
+
+      // Add color if present and not null
+      if (list.color) {
+        result.color = list.color;
+      }
+
+      // Add emblem if found
+      const emblem = emblems.get(list.title);
+      if (emblem) {
+        result.emblem = emblem;
+      }
+
+      return result;
+    });
   }
 
   async createReminder(data: CreateReminderData): Promise<ReminderJSON> {
@@ -190,22 +214,66 @@ class ReminderRepository {
     await executeCli<unknown>(['--action', 'delete', '--id', id]);
   }
 
-  async createReminderList(name: string): Promise<ListJSON> {
-    return executeCli<ListJSON>(['--action', 'create-list', '--name', name]);
+  async createReminderList(
+    name: string,
+    color?: string,
+    emblem?: string,
+  ): Promise<ReminderList> {
+    const args = ['--action', 'create-list', '--name', name];
+    if (color) {
+      args.push('--color', color);
+    }
+    const listJson = await executeCli<ListJSON>(args);
+
+    // Set emblem if provided
+    if (emblem) {
+      try {
+        await setListEmblem(name, emblem);
+      } catch {
+        // Emblem setting failed but list was created
+      }
+    }
+
+    return {
+      id: listJson.id,
+      title: listJson.title,
+      color: listJson.color ?? undefined,
+      emblem,
+    };
   }
 
   async updateReminderList(
     currentName: string,
-    newName: string,
-  ): Promise<ListJSON> {
-    return executeCli<ListJSON>([
-      '--action',
-      'update-list',
-      '--name',
-      currentName,
-      '--newName',
-      newName,
-    ]);
+    newName?: string,
+    color?: string,
+    emblem?: string,
+  ): Promise<ReminderList> {
+    const args = ['--action', 'update-list', '--name', currentName];
+    const effectiveName = newName ?? currentName;
+
+    if (newName) {
+      args.push('--newName', newName);
+    }
+    if (color) {
+      args.push('--color', color);
+    }
+    const listJson = await executeCli<ListJSON>(args);
+
+    // Set emblem if provided
+    if (emblem) {
+      try {
+        await setListEmblem(effectiveName, emblem);
+      } catch {
+        // Emblem setting failed but list was updated
+      }
+    }
+
+    return {
+      id: listJson.id,
+      title: listJson.title,
+      color: listJson.color ?? undefined,
+      emblem,
+    };
   }
 
   async deleteReminderList(name: string): Promise<void> {

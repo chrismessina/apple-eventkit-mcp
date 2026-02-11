@@ -393,12 +393,38 @@ export const ReadCalendarsSchema = z.object({});
 
 export const CreateReminderListSchema = z.object({
   name: RequiredListNameSchema,
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, {
+      message: 'Color must be a valid hex code (e.g., "#FF5733")',
+    })
+    .optional(),
+  emblem: z
+    .string()
+    .min(1, 'Emblem must not be empty')
+    .max(4, 'Emblem must be at most 4 characters')
+    .optional(),
 });
 
-export const UpdateReminderListSchema = z.object({
-  name: RequiredListNameSchema,
-  newName: RequiredListNameSchema,
-});
+export const UpdateReminderListSchema = z
+  .object({
+    name: RequiredListNameSchema,
+    newName: SafeListNameSchema,
+    color: z
+      .string()
+      .regex(/^#[0-9A-Fa-f]{6}$/, {
+        message: 'Color must be a valid hex code (e.g., "#FF5733")',
+      })
+      .optional(),
+    emblem: z
+      .string()
+      .min(1, 'Emblem must not be empty')
+      .max(4, 'Emblem must be at most 4 characters')
+      .optional(),
+  })
+  .refine((data) => data.newName || data.color || data.emblem, {
+    message: 'At least one of newName, color, or emblem must be provided',
+  });
 
 export const DeleteReminderListSchema = z.object({
   name: RequiredListNameSchema,

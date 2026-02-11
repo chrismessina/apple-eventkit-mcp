@@ -2,6 +2,7 @@ import Foundation
 import Dispatch
 import EventKit
 import CoreLocation
+import CoreGraphics
 
 // MARK: - Output Structures & JSON Models
 
@@ -356,6 +357,7 @@ private func parseDate(from dateString: String) -> Date? {
 struct ListJSON: Codable {
     let id: String
     let title: String
+    let color: String? // Hex color code
 }
 
 struct EventJSON: Codable {
@@ -841,7 +843,7 @@ class RemindersManager {
         }
         try eventStore.remove(reminder, commit: true)
     }
-    func createList(title: String) throws -> ListJSON {
+    func createList(title: String, color: String?) throws -> ListJSON {
         let list = EKCalendar(for: .reminder, eventStore: eventStore)
         list.title = title
 
@@ -857,13 +859,26 @@ class RemindersManager {
             throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "No calendar source available. Please ensure at least one reminders source exists."])
         }
 
+        // Set color if provided
+        if let colorHex = color, let cgColor = CGColor.fromHex(colorHex) {
+            list.cgColor = cgColor
+        }
+
         try eventStore.saveCalendar(list, commit: true)
         return list.toJSON()
     }
 
-    func updateList(currentName: String, newName: String) throws -> ListJSON {
+    func updateList(currentName: String, newName: String?, color: String?) throws -> ListJSON {
         let list = try findList(named: currentName)
-        list.title = newName
+        if let newName = newName, !newName.isEmpty {
+            list.title = newName
+        }
+
+        // Set color if provided
+        if let colorHex = color, let cgColor = CGColor.fromHex(colorHex) {
+            list.cgColor = cgColor
+        }
+
         try eventStore.saveCalendar(list, commit: true)
         return list.toJSON()
     }
@@ -1180,7 +1195,11 @@ extension EKReminder {
 }
 extension EKCalendar {
     func toJSON() -> ListJSON {
-        ListJSON(id: self.calendarIdentifier, title: self.title)
+        ListJSON(
+            id: self.calendarIdentifier,
+            title: self.title,
+            color: self.cgColor?.toHex()
+        )
     }
 
     func toCalendarJSON() -> CalendarJSON {
@@ -1202,6 +1221,40 @@ private func sourceTypeString(_ type: EKSourceType) -> String {
     case .subscribed: return "subscribed"
     case .birthdays: return "birthdays"
     @unknown default: return "unknown"
+    }
+}
+
+// MARK: - Helper to convert CGColor to hex string
+extension CGColor {
+    func toHex() -> String? {
+        guard let components = self.components, components.count >= 3 else {
+            return nil
+        }
+
+        let r = Int(round(components[0] * 255))
+        let g = Int(round(components[1] * 255))
+        let b = Int(round(components[2] * 255))
+
+        return String(format: "#%02X%02X%02X", r, g, b)
+    }
+}
+
+// MARK: - Helper to convert hex string to CGColor
+extension CGColor {
+    static func fromHex(_ hex: String) -> CGColor? {
+        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
+
+        var rgb: UInt64 = 0
+        guard Scanner(string: hexSanitized).scanHexInt64(&rgb) else {
+            return nil
+        }
+
+        let r = CGFloat((rgb & 0xFF0000) >> 16) / 255.0
+        let g = CGFloat((rgb & 0x00FF00) >> 8) / 255.0
+        let b = CGFloat(rgb & 0x0000FF) / 255.0
+
+        return CGColor(red: r, green: g, blue: b, alpha: 1.0)
     }
 }
 
@@ -1480,10 +1533,10 @@ func main() {
                 try manager.deleteReminder(id: id); print(String(data: try encoder.encode(StandardOutput(result: DeleteResult(id: id))), encoding: .utf8)!)
             case "create-list":
                 guard let title = parser.get("name") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--name required."]) }
-                print(String(data: try encoder.encode(StandardOutput(result: try manager.createList(title: title))), encoding: .utf8)!)
+                print(String(data: try encoder.encode(StandardOutput(result: try manager.createList(title: title, color: parser.get("color")))), encoding: .utf8)!)
             case "update-list":
-                guard let name = parser.get("name"), let newName = parser.get("newName") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--name and --newName required."]) }
-                print(String(data: try encoder.encode(StandardOutput(result: try manager.updateList(currentName: name, newName: newName))), encoding: .utf8)!)
+                guard let name = parser.get("name") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--name required."]) }
+                print(String(data: try encoder.encode(StandardOutput(result: try manager.updateList(currentName: name, newName: parser.get("newName"), color: parser.get("color")))), encoding: .utf8)!)
             case "delete-list":
                 guard let title = parser.get("name") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--name required."]) }
                 try manager.deleteList(title: title); print(String(data: try encoder.encode(StandardOutput(result: DeleteListResult(title: title))), encoding: .utf8)!)
