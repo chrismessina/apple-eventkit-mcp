@@ -29,11 +29,16 @@ import { extractTags } from './tagUtils.js';
 
 const VALID_ALARM_TYPES = ['display', 'audio', 'procedure', 'email'] as const;
 
+const isValidAlarmType = (
+  value: unknown,
+): value is 'display' | 'audio' | 'procedure' | 'email' =>
+  (VALID_ALARM_TYPES as readonly string[]).includes(value as string);
+
 const mapAlarmType = (
   alarmType: string | null | undefined,
 ): 'display' | 'audio' | 'procedure' | 'email' | undefined => {
-  if (alarmType && VALID_ALARM_TYPES.includes(alarmType as any)) {
-    return alarmType as 'display' | 'audio' | 'procedure' | 'email';
+  if (alarmType && isValidAlarmType(alarmType)) {
+    return alarmType;
   }
   return undefined;
 };
@@ -238,9 +243,11 @@ class ReminderRepository {
     const listJson = await executeCli<ListJSON>(args);
 
     // Set emblem if provided
+    let actualEmblem: string | undefined;
     if (emblem) {
       try {
         await setListEmblem(name, emblem);
+        actualEmblem = emblem;
       } catch {
         // Emblem setting failed but list was created
       }
@@ -250,7 +257,7 @@ class ReminderRepository {
       id: listJson.id,
       title: listJson.title,
       color: listJson.color ?? undefined,
-      emblem,
+      emblem: actualEmblem,
     };
   }
 
@@ -272,9 +279,11 @@ class ReminderRepository {
     const listJson = await executeCli<ListJSON>(args);
 
     // Set emblem if provided
+    let actualEmblem: string | undefined;
     if (emblem) {
       try {
         await setListEmblem(effectiveName, emblem);
+        actualEmblem = emblem;
       } catch {
         // Emblem setting failed but list was updated
       }
@@ -284,7 +293,7 @@ class ReminderRepository {
       id: listJson.id,
       title: listJson.title,
       color: listJson.color ?? undefined,
-      emblem,
+      emblem: actualEmblem,
     };
   }
 

@@ -21,12 +21,10 @@ async function createClient(): Promise<Client> {
     cwd: process.cwd(),
   });
 
-  const client = new Client(
-    {
-      name: 'e2e-test-client',
-      version: '1.0.0',
-    },
-  );
+  const client = new Client({
+    name: 'e2e-test-client',
+    version: '1.0.0',
+  });
 
   await client.connect(transport);
   return client;
@@ -191,7 +189,9 @@ describe('MCP Server E2E Tests', () => {
 
       const schema = reminderTool?.inputSchema;
       expect(schema?.properties?.title).toBeDefined();
-      expect((schema as Record<string, unknown>)?.dependentSchemas).toBeDefined();
+      expect(
+        (schema as Record<string, unknown>)?.dependentSchemas,
+      ).toBeDefined();
     });
   });
 });

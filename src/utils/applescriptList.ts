@@ -3,7 +3,7 @@
  * AppleScript utility functions for reminder list emblem operations
  */
 
-import { runAppleScript } from './cliExecutor.js';
+import { escapeAppleScriptString, runAppleScript } from './cliExecutor.js';
 
 /**
  * Gets the emblem (icon) for a reminder list
@@ -13,10 +13,11 @@ import { runAppleScript } from './cliExecutor.js';
 export async function getListEmblem(
   listTitle: string,
 ): Promise<string | undefined> {
+  const escapedTitle = escapeAppleScriptString(listTitle);
   const script = `
     tell application "Reminders"
       try
-        set theList to list "${listTitle}"
+        set theList to list "${escapedTitle}"
         if emblem of theList is not missing value then
           return emblem of theList
         else
@@ -45,11 +46,13 @@ export async function setListEmblem(
   listTitle: string,
   emblem: string,
 ): Promise<void> {
+  const escapedTitle = escapeAppleScriptString(listTitle);
+  const escapedEmblem = escapeAppleScriptString(emblem);
   const script = `
     tell application "Reminders"
       try
-        set theList to list "${listTitle}"
-        set emblem of theList to "${emblem}"
+        set theList to list "${escapedTitle}"
+        set emblem of theList to "${escapedEmblem}"
       on error errorMessage
         error errorMessage
       end try
@@ -57,17 +60,6 @@ export async function setListEmblem(
   `;
 
   await runAppleScript(script);
-}
-
-/**
- * Parses a list display string to extract emblem
- * @param display - The display string (e.g., "🛒 Courses [#007AFF]")
- * @returns The emblem emoji or undefined
- */
-export function parseEmblem(display: string): string | undefined {
-  const emojiRegex = /^([\p{Emoji}\p{Emoji_Presentation}])/u;
-  const match = display.match(emojiRegex);
-  return match ? match[1] : undefined;
 }
 
 /**
@@ -97,14 +89,62 @@ export function formatListDisplay(
 export async function getListEmblems(
   listTitles: string[],
 ): Promise<Map<string, string | undefined>> {
-  const emblemMap = new Map<string, string | undefined>();
+  // Try batch lookup first - get all emblems in a single AppleScript call
+  try {
+    const script = `
+      tell application "Reminders"
+        set allLists to every list
+        set resultText to ""
+        set tabChar to (ASCII character 9)
+        set newlineChar to (ASCII character 10)
+        repeat with i from 1 to count of allLists
+          set currentList to item i of allLists
+          set listName to name of currentList
+          set listEmblem to emblem of currentList
+          if listEmblem is missing value then
+            set listEmblem to ""
+          end if
+          if i is 1 then
+            set resultText to listName & tabChar & listEmblem
+          else
+            set resultText to resultText & newlineChar & listName & tabChar & listEmblem
+          end if
+        end repeat
+        return resultText
+      end tell
+    `;
 
-  await Promise.all(
-    listTitles.map(async (title) => {
-      const emblem = await getListEmblem(title);
-      emblemMap.set(title, emblem);
-    }),
-  );
+    const result = await runAppleScript(script);
+    const lines = result.trim().split('\n');
+    const emblemMap = new Map<string, string | undefined>();
 
-  return emblemMap;
+    for (const line of lines) {
+      const [name, emblem] = line.split('\t');
+      if (listTitles.includes(name)) {
+        emblemMap.set(name, emblem || undefined);
+      }
+    }
+
+    // Fallback to per-list lookup for any titles not found in batch result
+    for (const title of listTitles) {
+      if (!emblemMap.has(title)) {
+        const emblem = await getListEmblem(title);
+        emblemMap.set(title, emblem);
+      }
+    }
+
+    return emblemMap;
+  } catch {
+    // Fallback to per-list lookup on error
+    const emblemMap = new Map<string, string | undefined>();
+
+    await Promise.all(
+      listTitles.map(async (title) => {
+        const emblem = await getListEmblem(title);
+        emblemMap.set(title, emblem);
+      }),
+    );
+
+    return emblemMap;
+  }
 }

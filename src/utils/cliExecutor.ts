@@ -5,7 +5,7 @@
  */
 
 import type { ExecFileException } from 'node:child_process';
-import { execFile, exec } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import path from 'node:path';
 import {
   findSecureBinaryPath,
@@ -291,13 +291,22 @@ export async function executeCli<T>(args: string[]): Promise<T> {
 }
 
 /**
+ * Escapes a string for safe AppleScript string interpolation
+ * @param value - The string to escape
+ * @returns The escaped string
+ */
+export function escapeAppleScriptString(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+/**
  * Executes an AppleScript command and returns the output
  * @param script - The AppleScript to execute
  * @returns Promise<string> The output from the AppleScript
  */
 export async function runAppleScript(script: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    exec(`osascript -e '${script.replace(/'/g, "\\'")}'`, (error, stdout, stderr) => {
+    execFile('osascript', ['-e', script], (error, stdout, stderr) => {
       if (error) {
         const execError = error as ExecFileException & {
           stdout?: string | Buffer;

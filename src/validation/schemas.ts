@@ -201,7 +201,9 @@ const StructuredLocationSchema = z
   })
   .optional();
 
-const AlarmTypeSchema = z.enum(['display', 'audio', 'procedure', 'email']).optional();
+const AlarmTypeSchema = z
+  .enum(['display', 'audio', 'procedure', 'email'])
+  .optional();
 
 const AlarmSchema = z
   .object({
