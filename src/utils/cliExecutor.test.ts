@@ -166,7 +166,7 @@ describe('cliExecutor', () => {
 
       await expect(
         executeCli(['--action', 'read', '--id', '123']),
-      ).rejects.toThrow('EventKitCLI binary not found or validation failed');
+      ).rejects.toThrow('EventKitCLI binary not found');
     });
 
     it('wraps unexpected exec failures', async () => {

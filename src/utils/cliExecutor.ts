@@ -243,7 +243,24 @@ export async function executeCli<T>(args: string[]): Promise<T> {
 
   if (!cliPath) {
     throw new Error(
-      `EventKitCLI binary not found or validation failed. Searched: ${possiblePaths.join(', ')}`,
+      `EventKitCLI binary not found. When installed via npx, the Swift binary must be built manually:
+
+1. Find the npx cache location:
+   pnpm store path
+
+2. Navigate to the package and build:
+   cd \$(pnpm store path)/.pnpm/mcp-server-apple-events@*
+   pnpm run build
+
+Alternatively, clone the repository and build locally:
+   git clone https://github.com/fradser/mcp-server-apple-events.git
+   cd mcp-server-apple-events
+   pnpm install
+   pnpm build
+
+Then use the local path in your Claude Desktop config:
+   "command": "node",
+   "args": ["/absolute/path/to/mcp-server-apple-events/bin/run.cjs"]`,
     );
   }
 
