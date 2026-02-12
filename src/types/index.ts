@@ -68,11 +68,13 @@ export interface StructuredLocation {
  * - Relative alarms use seconds offset from start/due dates (negative = before).
  * - Absolute alarms fire at a specific date/time.
  * - Location alarms use a structured location + proximity (geofence).
+ * - alarmType is READ-ONLY: determined automatically by EventKit based on alarm properties.
  */
 export interface Alarm {
   relativeOffset?: number;
   absoluteDate?: string;
   locationTrigger?: LocationTrigger;
+  alarmType?: 'display' | 'audio' | 'procedure' | 'email';
 }
 
 /**

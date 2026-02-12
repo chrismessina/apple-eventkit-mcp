@@ -63,6 +63,7 @@ struct AlarmJSON: Codable {
     let relativeOffset: Double?
     let absoluteDate: String?
     let locationTrigger: LocationTriggerJSON?
+    let alarmType: String?
 }
 
 struct ParticipantJSON: Codable {
@@ -171,19 +172,32 @@ private func structuredLocationToJSON(_ structuredLocation: EKStructuredLocation
 
 private func alarmToJSON(_ alarm: EKAlarm, preferredTimeZone: TimeZone) -> AlarmJSON {
     if let structured = locationTriggerToJSON(alarm) {
-        return AlarmJSON(relativeOffset: nil, absoluteDate: nil, locationTrigger: structured)
+        let type = alarmTypeToString(alarm.type)
+        return AlarmJSON(relativeOffset: nil, absoluteDate: nil, locationTrigger: structured, alarmType: type)
     }
 
     if let absolute = alarm.absoluteDate {
+        let type = alarmTypeToString(alarm.type)
         return AlarmJSON(
             relativeOffset: nil,
             absoluteDate: formatEventDate(absolute, preferredTimeZone: preferredTimeZone, includeTime: true),
-            locationTrigger: nil
+            locationTrigger: nil,
+            alarmType: type
         )
     }
 
-    // relativeOffset is valid when absoluteDate is nil and no structuredLocation alarm is set
-    return AlarmJSON(relativeOffset: alarm.relativeOffset, absoluteDate: nil, locationTrigger: nil)
+    let type = alarmTypeToString(alarm.type)
+    return AlarmJSON(relativeOffset: alarm.relativeOffset, absoluteDate: nil, locationTrigger: nil, alarmType: type)
+}
+
+private func alarmTypeToString(_ type: EKAlarmType) -> String? {
+    switch type {
+    case .display: return "display"
+    case .audio: return "audio"
+    case .procedure: return "procedure"
+    case .email: return "email"
+    @unknown default: return nil
+    }
 }
 
 private func parseAlarms(from json: String, dateParser: (String) -> Date?) -> [EKAlarm]? {

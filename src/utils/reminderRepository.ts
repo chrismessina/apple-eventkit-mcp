@@ -13,6 +13,7 @@ import type {
   ReminderReadResult,
   UpdateReminderData,
 } from '../types/repository.js';
+import { getListEmblems, setListEmblem } from './applescriptList.js';
 import { executeCli } from './cliExecutor.js';
 import type { ReminderFilters } from './dateFiltering.js';
 import { applyReminderFilters } from './dateFiltering.js';
@@ -25,7 +26,17 @@ import {
 } from './helpers.js';
 import { getSubtaskProgress, parseSubtasks } from './subtaskUtils.js';
 import { extractTags } from './tagUtils.js';
-import { getListEmblems, setListEmblem } from './applescriptList.js';
+
+const VALID_ALARM_TYPES = ['display', 'audio', 'procedure', 'email'] as const;
+
+const mapAlarmType = (
+  alarmType: string | null | undefined,
+): 'display' | 'audio' | 'procedure' | 'email' | undefined => {
+  if (alarmType && VALID_ALARM_TYPES.includes(alarmType as any)) {
+    return alarmType as 'display' | 'audio' | 'procedure' | 'email';
+  }
+  return undefined;
+};
 
 class ReminderRepository {
   private mapReminder(reminder: ReminderJSON): Reminder {
@@ -79,6 +90,7 @@ class ReminderRepository {
         .map((alarm) => ({
           relativeOffset: alarm.relativeOffset ?? undefined,
           absoluteDate: alarm.absoluteDate ?? undefined,
+          alarmType: mapAlarmType(alarm.alarmType),
           locationTrigger: alarm.locationTrigger
             ? {
                 title: alarm.locationTrigger.title,

@@ -38,6 +38,7 @@ export interface AlarmJSON {
   relativeOffset?: number | null;
   absoluteDate?: string | null;
   locationTrigger?: LocationTriggerJSON | null;
+  alarmType?: string | null;
 }
 
 export interface ParticipantJSON {

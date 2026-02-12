@@ -231,6 +231,31 @@ describe('ReminderRepository', () => {
 
       expect(result[0].dueDate).toBe('2025-11-20T02:00:00Z');
     });
+
+    it('should preserve alarmType when mapping alarms from Swift CLI', async () => {
+      const mockReminders = [
+        {
+          id: 'alarm-1',
+          title: 'Alarm Type Reminder',
+          isCompleted: false,
+          list: 'Default',
+          priority: 0,
+          alarms: [{ relativeOffset: -900, alarmType: 'display' }],
+        },
+      ];
+
+      mockExecuteCli.mockResolvedValue({
+        reminders: mockReminders,
+        lists: [],
+      });
+      mockApplyReminderFilters.mockImplementation((reminders) => reminders);
+
+      const result = await repository.findReminders();
+
+      expect(result[0].alarms).toEqual([
+        { relativeOffset: -900, alarmType: 'display' },
+      ]);
+    });
   });
 
   describe('findAllLists', () => {
@@ -542,7 +567,10 @@ describe('ReminderRepository', () => {
     });
 
     it('should create list with special characters', async () => {
-      const mockResult: ReminderList = { id: '789', title: 'Shopping List! @#$' };
+      const mockResult: ReminderList = {
+        id: '789',
+        title: 'Shopping List! @#$',
+      };
 
       mockExecuteCli.mockResolvedValue(mockResult);
 

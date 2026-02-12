@@ -148,6 +148,12 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
                 },
                 required: ['title', 'latitude', 'longitude', 'proximity'],
               },
+              alarmType: {
+                type: 'string',
+                enum: ['display', 'audio', 'procedure', 'email'],
+                description:
+                  'READ-ONLY: Alarm presentation type (EKAlarm.type). Determined automatically by EventKit: "display" shows notification, "audio" plays sound, "procedure" opens URL, "email" sends email. Cannot be set manually.',
+              },
             },
           },
         },
@@ -555,6 +561,12 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
                   },
                 },
                 required: ['title', 'latitude', 'longitude', 'proximity'],
+              },
+              alarmType: {
+                type: 'string',
+                enum: ['display', 'audio', 'procedure', 'email'],
+                description:
+                  'READ-ONLY: Alarm presentation type (EKAlarm.type). Determined automatically by EventKit: "display" shows notification, "audio" plays sound, "procedure" opens URL, "email" sends email. Cannot be set manually.',
               },
             },
           },

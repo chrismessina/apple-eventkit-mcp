@@ -201,11 +201,14 @@ const StructuredLocationSchema = z
   })
   .optional();
 
+const AlarmTypeSchema = z.enum(['display', 'audio', 'procedure', 'email']).optional();
+
 const AlarmSchema = z
   .object({
     relativeOffset: z.number().finite().optional(),
     absoluteDate: SafeDateSchema,
     locationTrigger: LocationTriggerObjectSchema.optional(),
+    alarmType: AlarmTypeSchema,
   })
   .refine(
     (alarm) =>
