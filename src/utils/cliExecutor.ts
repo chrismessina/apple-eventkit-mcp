@@ -12,6 +12,7 @@ import {
   getEnvironmentBinaryConfig,
 } from './binaryValidator.js';
 import { FILE_SYSTEM } from './constants.js';
+import { CliUserError } from './errorHandling.js';
 import { bufferToString } from './helpers.js';
 import {
   hasBeenPrompted,
@@ -182,7 +183,7 @@ const parseCliOutput = <T>(output: string): T => {
     throw new CliPermissionError(parsed.message, permissionDomain);
   }
 
-  throw new Error(parsed.message);
+  throw new CliUserError(parsed.message);
 };
 
 const runCli = async <T>(cliPath: string, args: string[]): Promise<T> => {
@@ -194,7 +195,7 @@ const runCli = async <T>(cliPath: string, args: string[]): Promise<T> => {
     }
     return parseCliOutput(normalized);
   } catch (error) {
-    if (error instanceof CliPermissionError) {
+    if (error instanceof CliPermissionError || error instanceof CliUserError) {
       throw error;
     }
     const execError = error as ExecFileException & {
