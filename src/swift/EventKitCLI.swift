@@ -2,6 +2,7 @@ import Foundation
 import Dispatch
 import EventKit
 import CoreLocation
+import CoreGraphics
 
 // MARK: - Output Structures & JSON Models
 
@@ -62,6 +63,7 @@ struct AlarmJSON: Codable {
     let relativeOffset: Double?
     let absoluteDate: String?
     let locationTrigger: LocationTriggerJSON?
+    let alarmType: String?
 }
 
 struct ParticipantJSON: Codable {
@@ -170,19 +172,32 @@ private func structuredLocationToJSON(_ structuredLocation: EKStructuredLocation
 
 private func alarmToJSON(_ alarm: EKAlarm, preferredTimeZone: TimeZone) -> AlarmJSON {
     if let structured = locationTriggerToJSON(alarm) {
-        return AlarmJSON(relativeOffset: nil, absoluteDate: nil, locationTrigger: structured)
+        let type = alarmTypeToString(alarm.type)
+        return AlarmJSON(relativeOffset: nil, absoluteDate: nil, locationTrigger: structured, alarmType: type)
     }
 
     if let absolute = alarm.absoluteDate {
+        let type = alarmTypeToString(alarm.type)
         return AlarmJSON(
             relativeOffset: nil,
             absoluteDate: formatEventDate(absolute, preferredTimeZone: preferredTimeZone, includeTime: true),
-            locationTrigger: nil
+            locationTrigger: nil,
+            alarmType: type
         )
     }
 
-    // relativeOffset is valid when absoluteDate is nil and no structuredLocation alarm is set
-    return AlarmJSON(relativeOffset: alarm.relativeOffset, absoluteDate: nil, locationTrigger: nil)
+    let type = alarmTypeToString(alarm.type)
+    return AlarmJSON(relativeOffset: alarm.relativeOffset, absoluteDate: nil, locationTrigger: nil, alarmType: type)
+}
+
+private func alarmTypeToString(_ type: EKAlarmType) -> String? {
+    switch type {
+    case .display: return "display"
+    case .audio: return "audio"
+    case .procedure: return "procedure"
+    case .email: return "email"
+    @unknown default: return nil
+    }
 }
 
 private func parseAlarms(from json: String, dateParser: (String) -> Date?) -> [EKAlarm]? {
@@ -356,6 +371,7 @@ private func parseDate(from dateString: String) -> Date? {
 struct ListJSON: Codable {
     let id: String
     let title: String
+    let color: String? // Hex color code
 }
 
 struct EventJSON: Codable {
@@ -619,17 +635,19 @@ class RemindersManager {
         return filtered.map { $0.toJSON() }
     }
 
-    func createReminder(title: String, listName: String?, notes: String?, location: String?, urlString: String?, startDateString: String?, dueDateString: String?, priority: Int?, alarmsJSON: String?, recurrenceRulesJSON: String?, locationTriggerJSON: String?) throws -> ReminderJSON {
+    func createReminder(title: String, listName: String?, notes: String?, location: String?, urlString: String?, startDateString: String?, dueDateString: String?, priority: Int?, alarmsJSON: String?, recurrenceRulesJSON: String?, locationTriggerJSON: String?, isCompleted: Bool?) throws -> ReminderJSON {
         let reminder = EKReminder(eventStore: eventStore)
         reminder.calendar = try findList(named: listName)
         reminder.title = title
+
+        if let isCompleted = isCompleted { reminder.isCompleted = isCompleted }
         if let location = location {
             reminder.location = location.isEmpty ? nil : location
         }
 
-        // Set priority (0=none, 1=high, 5=medium, 9=low)
+        // Set priority (0=none, 1=high, 2=medium, 3=low)
         if let p = priority {
-            reminder.priority = max(0, min(9, p))
+            reminder.priority = max(0, min(3, p))
         }
 
         // Set recurrence rules
@@ -750,9 +768,9 @@ class RemindersManager {
 
         if let isCompleted = isCompleted { reminder.isCompleted = isCompleted }
 
-        // Update priority (0=none, 1=high, 5=medium, 9=low)
+        // Update priority (0=none, 1=high, 2=medium, 3=low)
         if let p = priority {
-            reminder.priority = max(0, min(9, p))
+            reminder.priority = max(0, min(3, p))
         }
 
         // Update recurrence rules
@@ -839,16 +857,42 @@ class RemindersManager {
         }
         try eventStore.remove(reminder, commit: true)
     }
-    func createList(title: String) throws -> ListJSON {
+    func createList(title: String, color: String?) throws -> ListJSON {
         let list = EKCalendar(for: .reminder, eventStore: eventStore)
         list.title = title
+
+        // Set calendar source to avoid "Calendar has no source" error
+        // Try in order: default reminders calendar source, calDAV source, or local source
+        if let defaultReminderCalendar = eventStore.defaultCalendarForNewReminders() {
+            list.source = defaultReminderCalendar.source
+        } else if let caldavSource = eventStore.sources.first(where: { $0.sourceType == .calDAV }) {
+            list.source = caldavSource
+        } else if let localSource = eventStore.sources.first(where: { $0.sourceType == .local }) {
+            list.source = localSource
+        } else {
+            throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "No calendar source available. Please ensure at least one reminders source exists."])
+        }
+
+        // Set color if provided
+        if let colorHex = color, let cgColor = CGColor.fromHex(colorHex) {
+            list.cgColor = cgColor
+        }
+
         try eventStore.saveCalendar(list, commit: true)
         return list.toJSON()
     }
 
-    func updateList(currentName: String, newName: String) throws -> ListJSON {
+    func updateList(currentName: String, newName: String?, color: String?) throws -> ListJSON {
         let list = try findList(named: currentName)
-        list.title = newName
+        if let newName = newName, !newName.isEmpty {
+            list.title = newName
+        }
+
+        // Set color if provided
+        if let colorHex = color, let cgColor = CGColor.fromHex(colorHex) {
+            list.cgColor = cgColor
+        }
+
         try eventStore.saveCalendar(list, commit: true)
         return list.toJSON()
     }
@@ -1165,7 +1209,11 @@ extension EKReminder {
 }
 extension EKCalendar {
     func toJSON() -> ListJSON {
-        ListJSON(id: self.calendarIdentifier, title: self.title)
+        ListJSON(
+            id: self.calendarIdentifier,
+            title: self.title,
+            color: self.cgColor?.toHex()
+        )
     }
 
     func toCalendarJSON() -> CalendarJSON {
@@ -1187,6 +1235,40 @@ private func sourceTypeString(_ type: EKSourceType) -> String {
     case .subscribed: return "subscribed"
     case .birthdays: return "birthdays"
     @unknown default: return "unknown"
+    }
+}
+
+// MARK: - Helper to convert CGColor to hex string
+extension CGColor {
+    func toHex() -> String? {
+        guard let components = self.components, components.count >= 3 else {
+            return nil
+        }
+
+        let r = Int(round(components[0] * 255))
+        let g = Int(round(components[1] * 255))
+        let b = Int(round(components[2] * 255))
+
+        return String(format: "#%02X%02X%02X", r, g, b)
+    }
+}
+
+// MARK: - Helper to convert hex string to CGColor
+extension CGColor {
+    static func fromHex(_ hex: String) -> CGColor? {
+        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
+
+        var rgb: UInt64 = 0
+        guard Scanner(string: hexSanitized).scanHexInt64(&rgb) else {
+            return nil
+        }
+
+        let r = CGFloat((rgb & 0xFF0000) >> 16) / 255.0
+        let g = CGFloat((rgb & 0x00FF00) >> 8) / 255.0
+        let b = CGFloat(rgb & 0x0000FF) / 255.0
+
+        return CGColor(red: r, green: g, blue: b, alpha: 1.0)
     }
 }
 
@@ -1367,17 +1449,17 @@ func main() {
                 manager.requestCalendarAccess { granted, error in
                     guard granted else {
                         let errorMsg = error?.localizedDescription ?? "Unknown error"
-                        outputError("Calendar permission denied. \(errorMsg)\n\nPlease grant calendar permissions in:\nSystem Settings > Privacy & Security > Calendars")
+                        outputError("Calendar permission denied. \(errorMsg)\n\nPlease grant Full Calendar Access in:\nSystem Settings > Privacy & Security > Calendars")
                         return
                     }
                     handleAction()
                 }
             case .denied, .restricted:
                 // Permission was denied or restricted
-                outputError("Calendar permission denied or restricted.\n\nPlease grant calendar permissions in:\nSystem Settings > Privacy & Security > Calendars")
+                outputError("Calendar permission denied or restricted.\n\nPlease grant Full Calendar Access in:\nSystem Settings > Privacy & Security > Calendars")
             case .writeOnly:
                 // Write-only access is not sufficient for reading calendars
-                outputError("Calendar permission is write-only, but read access is required.\n\nPlease grant full calendar permissions in:\nSystem Settings > Privacy & Security > Calendars")
+                outputError("Calendar permission is write-only, but read access is required.\n\nPlease grant Full Calendar Access in:\nSystem Settings > Privacy & Security > Calendars")
             @unknown default:
                 outputError("Unknown calendar permission status.")
             }
@@ -1434,7 +1516,8 @@ func main() {
                     priority: parser.get("priority").flatMap { Int($0) },
                     alarmsJSON: parser.get("alarms"),
                     recurrenceRulesJSON: parser.get("recurrenceRules") ?? parser.get("recurrence"),
-                    locationTriggerJSON: parser.get("locationTrigger")
+                    locationTriggerJSON: parser.get("locationTrigger"),
+                    isCompleted: parser.get("isCompleted").map { $0 == "true" }
                 )
                 print(String(data: try encoder.encode(StandardOutput(result: reminder)), encoding: .utf8)!)
             case "update":
@@ -1464,10 +1547,10 @@ func main() {
                 try manager.deleteReminder(id: id); print(String(data: try encoder.encode(StandardOutput(result: DeleteResult(id: id))), encoding: .utf8)!)
             case "create-list":
                 guard let title = parser.get("name") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--name required."]) }
-                print(String(data: try encoder.encode(StandardOutput(result: try manager.createList(title: title))), encoding: .utf8)!)
+                print(String(data: try encoder.encode(StandardOutput(result: try manager.createList(title: title, color: parser.get("color")))), encoding: .utf8)!)
             case "update-list":
-                guard let name = parser.get("name"), let newName = parser.get("newName") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--name and --newName required."]) }
-                print(String(data: try encoder.encode(StandardOutput(result: try manager.updateList(currentName: name, newName: newName))), encoding: .utf8)!)
+                guard let name = parser.get("name") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--name required."]) }
+                print(String(data: try encoder.encode(StandardOutput(result: try manager.updateList(currentName: name, newName: parser.get("newName"), color: parser.get("color")))), encoding: .utf8)!)
             case "delete-list":
                 guard let title = parser.get("name") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--name required."]) }
                 try manager.deleteList(title: title); print(String(data: try encoder.encode(StandardOutput(result: DeleteListResult(title: title))), encoding: .utf8)!)

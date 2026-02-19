@@ -95,9 +95,9 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
         },
         priority: {
           type: 'integer',
-          enum: [0, 1, 5, 9],
+          enum: [0, 1, 2, 3],
           description:
-            'Priority level: 0=none, 1=high, 5=medium, 9=low (for create/update).',
+            'Priority level: 0=none, 1=high, 2=medium, 3=low (for create/update).',
         },
         alarms: {
           type: 'array',
@@ -147,6 +147,12 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
                   },
                 },
                 required: ['title', 'latitude', 'longitude', 'proximity'],
+              },
+              alarmType: {
+                type: 'string',
+                enum: ['display', 'audio', 'procedure', 'email'],
+                description:
+                  'READ-ONLY: Alarm presentation type (EKAlarm.type). Determined automatically by EventKit: "display" shows notification, "audio" plays sound, "procedure" opens URL, "email" sends email. Cannot be set manually.',
               },
             },
           },
@@ -403,6 +409,16 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
           type: 'string',
           description: 'The new name for the list (for update).',
         },
+        color: {
+          type: 'string',
+          description:
+            'The hex color code for the list (for create/update). Example: "#FF5733".',
+        },
+        emblem: {
+          type: 'string',
+          description:
+            'An emoji to use as the list icon/emblem (for create/update). Example: "🛒". Limited to 1-4 characters.',
+        },
       },
       required: ['action'],
       dependentSchemas: {
@@ -410,10 +426,7 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
           oneOf: [
             { properties: { action: { const: 'read' } } },
             { properties: { action: { const: 'create' } }, required: ['name'] },
-            {
-              properties: { action: { const: 'update' } },
-              required: ['name', 'newName'],
-            },
+            { properties: { action: { const: 'update' } }, required: ['name'] },
             { properties: { action: { const: 'delete' } }, required: ['name'] },
           ],
         },
@@ -447,12 +460,12 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
         startDate: {
           type: 'string',
           description:
-            "Start date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time without timezone, e.g., '2025-11-04 09:00:00'). Also supports: 'YYYY-MM-DD', 'YYYY-MM-DDTHH:mm:ss', or ISO 8601 with timezone. When no timezone is specified, the time is interpreted as local time.",
+            "Start date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time without timezone, e.g., '2025-11-04 09:00:00'). Also supports: 'YYYY-MM-DD', 'YYYY-MM-DDTHH:mm:ss', or ISO 8601 with timezone. When no timezone is specified, the time is interpreted as local time. For action='read': if omitted and endDate is omitted, defaults to today; if only endDate is provided, startDate defaults to endDate - 14 days.",
         },
         endDate: {
           type: 'string',
           description:
-            "End date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time without timezone, e.g., '2025-11-04 10:00:00'). Also supports: 'YYYY-MM-DD', 'YYYY-MM-DDTHH:mm:ss', or ISO 8601 with timezone. When no timezone is specified, the time is interpreted as local time.",
+            "End date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time without timezone, e.g., '2025-11-04 10:00:00'). Also supports: 'YYYY-MM-DD', 'YYYY-MM-DDTHH:mm:ss', or ISO 8601 with timezone. When no timezone is specified, the time is interpreted as local time. For action='read': if omitted and startDate is omitted, defaults to today + 14 days; if only startDate is provided, endDate defaults to startDate + 14 days.",
         },
         note: {
           type: 'string',
@@ -548,6 +561,12 @@ const _EXTENDED_TOOLS: ExtendedTool[] = [
                   },
                 },
                 required: ['title', 'latitude', 'longitude', 'proximity'],
+              },
+              alarmType: {
+                type: 'string',
+                enum: ['display', 'audio', 'procedure', 'email'],
+                description:
+                  'READ-ONLY: Alarm presentation type (EKAlarm.type). Determined automatically by EventKit: "display" shows notification, "audio" plays sound, "procedure" opens URL, "email" sends email. Cannot be set manually.',
               },
             },
           },

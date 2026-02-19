@@ -13,7 +13,11 @@ import {
   findSecureBinaryPath,
   getEnvironmentBinaryConfig,
 } from './binaryValidator.js';
-import { CliPermissionError, executeCli } from './cliExecutor.js';
+import {
+  CliPermissionError,
+  escapeAppleScriptString,
+  executeCli,
+} from './cliExecutor.js';
 import {
   hasBeenPrompted,
   triggerPermissionPrompt,
@@ -162,7 +166,7 @@ describe('cliExecutor', () => {
 
       await expect(
         executeCli(['--action', 'read', '--id', '123']),
-      ).rejects.toThrow('EventKitCLI binary not found or validation failed');
+      ).rejects.toThrow('EventKitCLI binary not found');
     });
 
     it('wraps unexpected exec failures', async () => {
@@ -836,6 +840,38 @@ describe('cliExecutor', () => {
       expect(error.name).toBe('CliPermissionError');
       expect(error.message).toBe('Calendar permission denied.');
       expect(error.domain).toBe('calendars');
+    });
+  });
+
+  describe('escapeAppleScriptString', () => {
+    it('escapes backslashes', () => {
+      expect(escapeAppleScriptString('C:\\Users\\test')).toBe(
+        'C:\\\\Users\\\\test',
+      );
+    });
+
+    it('escapes double quotes', () => {
+      expect(escapeAppleScriptString('List "quoted"')).toBe(
+        'List \\"quoted\\"',
+      );
+    });
+
+    it('escapes both backslashes and quotes', () => {
+      const input = 'path"test"';
+      const result = escapeAppleScriptString(input);
+      expect(result).toBe('path\\"test\\"');
+    });
+
+    it('passes through clean strings unchanged', () => {
+      expect(escapeAppleScriptString('Shopping List')).toBe('Shopping List');
+    });
+
+    it('handles empty strings', () => {
+      expect(escapeAppleScriptString('')).toBe('');
+    });
+
+    it('handles special characters like emoji', () => {
+      expect(escapeAppleScriptString('🛒')).toBe('🛒');
     });
   });
 });

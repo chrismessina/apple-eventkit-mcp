@@ -38,6 +38,7 @@ export interface AlarmJSON {
   relativeOffset?: number | null;
   absoluteDate?: string | null;
   locationTrigger?: LocationTriggerJSON | null;
+  alarmType?: string | null;
 }
 
 export interface ParticipantJSON {
@@ -77,6 +78,7 @@ export interface ReminderJSON {
 export interface ListJSON {
   id: string;
   title: string;
+  color?: string | null;
 }
 
 export interface EventJSON {
@@ -137,6 +139,7 @@ export interface CreateReminderData {
   startDate?: string;
   dueDate?: string;
   priority?: number;
+  isCompleted?: boolean;
   completionDate?: string;
   alarms?: AlarmJSON[];
   recurrenceRules?: RecurrenceRuleJSON[];

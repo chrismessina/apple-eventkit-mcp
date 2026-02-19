@@ -164,11 +164,15 @@ const formatRecurrenceRules = (rules: RecurrenceRule[]): string => {
 };
 
 const formatAlarm = (alarm: Alarm): string => {
-  if (alarm.absoluteDate) return `at ${alarm.absoluteDate}`;
+  let typeStr = '';
+  if (alarm.alarmType) {
+    typeStr = ` (${alarm.alarmType})`;
+  }
+  if (alarm.absoluteDate) return `at ${alarm.absoluteDate}${typeStr}`;
   if (alarm.relativeOffset !== undefined)
-    return `${alarm.relativeOffset}s from due/start`;
+    return `${alarm.relativeOffset}s from due/start${typeStr}`;
   if (alarm.locationTrigger)
-    return `on ${formatLocationTrigger(alarm.locationTrigger)}`;
+    return `on ${formatLocationTrigger(alarm.locationTrigger)}${typeStr}`;
   return 'unknown';
 };
 
@@ -306,6 +310,7 @@ export const handleCreateReminder = async (
       startDate: validatedArgs.startDate,
       dueDate: validatedArgs.dueDate,
       priority: validatedArgs.priority,
+      isCompleted: validatedArgs.completed,
       alarms: validatedArgs.alarms,
       recurrenceRules:
         validatedArgs.recurrenceRules ??

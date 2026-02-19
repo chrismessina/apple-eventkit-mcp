@@ -138,8 +138,8 @@ const PriorityFilterEnum = z.enum(['high', 'medium', 'low', 'none']).optional();
 const PriorityValueSchema = z
   .number()
   .int()
-  .refine((val) => [0, 1, 5, 9].includes(val), {
-    message: 'Priority must be 0 (none), 1 (high), 5 (medium), or 9 (low)',
+  .refine((val) => [0, 1, 2, 3].includes(val), {
+    message: 'Priority must be 0 (none), 1 (high), 2 (medium), or 3 (low)',
   })
   .optional();
 
@@ -201,11 +201,16 @@ const StructuredLocationSchema = z
   })
   .optional();
 
+const AlarmTypeSchema = z
+  .enum(['display', 'audio', 'procedure', 'email'])
+  .optional();
+
 const AlarmSchema = z
   .object({
     relativeOffset: z.number().finite().optional(),
     absoluteDate: SafeDateSchema,
     locationTrigger: LocationTriggerObjectSchema.optional(),
+    alarmType: AlarmTypeSchema,
   })
   .refine(
     (alarm) =>
@@ -267,6 +272,7 @@ const BaseReminderFields = {
   ),
   targetList: SafeListNameSchema,
   priority: PriorityValueSchema,
+  completed: z.boolean().optional(),
   alarms: AlarmArraySchema,
   clearAlarms: z.boolean().optional(),
   recurrenceRules: RecurrenceRulesSchema,
@@ -392,12 +398,38 @@ export const ReadCalendarsSchema = z.object({});
 
 export const CreateReminderListSchema = z.object({
   name: RequiredListNameSchema,
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, {
+      message: 'Color must be a valid hex code (e.g., "#FF5733")',
+    })
+    .optional(),
+  emblem: z
+    .string()
+    .min(1, 'Emblem must not be empty')
+    .max(4, 'Emblem must be at most 4 characters')
+    .optional(),
 });
 
-export const UpdateReminderListSchema = z.object({
-  name: RequiredListNameSchema,
-  newName: RequiredListNameSchema,
-});
+export const UpdateReminderListSchema = z
+  .object({
+    name: RequiredListNameSchema,
+    newName: SafeListNameSchema,
+    color: z
+      .string()
+      .regex(/^#[0-9A-Fa-f]{6}$/, {
+        message: 'Color must be a valid hex code (e.g., "#FF5733")',
+      })
+      .optional(),
+    emblem: z
+      .string()
+      .min(1, 'Emblem must not be empty')
+      .max(4, 'Emblem must be at most 4 characters')
+      .optional(),
+  })
+  .refine((data) => data.newName || data.color || data.emblem, {
+    message: 'At least one of newName, color, or emblem must be provided',
+  });
 
 export const DeleteReminderListSchema = z.object({
   name: RequiredListNameSchema,

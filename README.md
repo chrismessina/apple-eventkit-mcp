@@ -63,6 +63,16 @@ When the CLI detects a `notDetermined` authorization status it calls `requestFul
 
 If a Claude tool call still encounters a permission failure, the Node.js layer automatically runs a minimal AppleScript (`osascript -e 'tell application "Reminders" …'`) to surface the dialog and then retries the Swift CLI once.
 
+### Troubleshooting Calendar Read Errors
+
+If you see `Failed to read calendar events`, verify Calendar is set to **Full Calendar Access**:
+
+- Open `System Settings > Privacy & Security > Calendars`
+- Find the app that launches this MCP server (for example Terminal or Claude Desktop)
+- Change access to **Full Calendar Access**
+
+You can also re-run `./check-permissions.sh` (it now validates both Reminders and Calendars access).
+
 **Verification command**
 
 ```bash
@@ -141,6 +151,8 @@ code %APPDATA%\Claude\claude_desktop_config.json
 
 Add the following configuration to your `claude_desktop_config.json`:
 
+**Option A: Using npx (recommended)**
+
 ```json
 {
   "mcpServers": {
@@ -151,6 +163,24 @@ Add the following configuration to your `claude_desktop_config.json`:
   }
 }
 ```
+
+**Option B: Using local build**
+
+If you have built the project locally, use node with the path to run.cjs:
+
+```json
+{
+  "mcpServers": {
+    "apple-reminders": {
+      "command": "node",
+      "args": ["/absolute/path/to/mcp-server-apple-events/bin/run.cjs"]
+    }
+  }
+}
+```
+
+For more information on connecting local MCP servers, see the
+[official MCP documentation](https://modelcontextprotocol.io/docs/develop/connect-local-servers).
 
 ### 3. Restart Claude Desktop
 
@@ -323,7 +353,7 @@ Manages individual reminder tasks with full CRUD support, including priority, al
 - `note` _(optional)_: Note text to attach to the reminder
 - `url` _(optional)_: URL to associate with the reminder
 - `location` _(optional)_: Location text (`EKCalendarItem.location`) (not a geofence trigger)
-- `priority` _(optional)_: Priority level (0=none, 1=high, 5=medium, 9=low)
+- `priority` _(optional)_: Priority level (0=none, 1=high, 2=medium, 3=low)
 - `alarms` _(optional)_: Array of alarm objects (see Alarm Object below)
 - `recurrenceRules` _(optional)_: Array of recurrence rules (see Recurrence Rules below)
 - `recurrence` _(optional)_: Legacy single recurrence rule object (shorthand for one-item `recurrenceRules`)
@@ -343,7 +373,7 @@ Manages individual reminder tasks with full CRUD support, including priority, al
 - `completed` _(optional)_: Mark reminder as completed/uncompleted
 - `completionDate` _(optional)_: Set an explicit completion date/time
 - `targetList` _(optional)_: Name of the list containing the reminder
-- `priority` _(optional)_: New priority level (0=none, 1=high, 5=medium, 9=low)
+- `priority` _(optional)_: New priority level (0=none, 1=high, 2=medium, 3=low)
 - `alarms` _(optional)_: Replace alarms with this array
 - `clearAlarms` _(optional)_: Set to true to remove all alarms
 - `recurrenceRules` _(optional)_: Replace recurrence rules with this array
